@@ -1,0 +1,25 @@
+parameters:
+  displayName: Create Pull Request
+  azureSubscription: ''
+  projectName: ''
+  repositoryName: ''
+  sourceBranch: ''
+  targetBranch: ''
+  pullRequestTitle: 'Auto generated pull request'
+  autoComplete: true
+  deleteSourceBranch: false
+
+steps: 
+- script: az extension add -n azure-devops
+  displayName: 'Install Azure DevOps Extension'
+
+- script: echo $(System.AccessToken) | az devops login --organization https://dev.azure.com/audacia
+  displayName: Azure CLI Login
+
+- task: AzureCLI@2
+  displayName: Azure CLI
+  inputs:
+    azureSubscription: ${{ parameters.azureSubscription }}
+    scriptType: ps
+    scriptLocation: inlineScript
+    inlineScript: az repos pr create --organization https://dev.azure.com/audacia --project "${{ parameters.projectName }}" --repository "${{ parameters.repositoryName }}" --source-branch "${{ parameters.sourceBranch }}" --target-branch "${{ parameters.targetBranch }}" --title "${{ parameters.pullRequestTitle }}" --auto-complete ${{  parameters.autoComplete }} --delete-source-branch ${{ parameters.deleteSourceBranch }}

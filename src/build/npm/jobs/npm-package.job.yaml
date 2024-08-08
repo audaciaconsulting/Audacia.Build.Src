@@ -1,0 +1,17 @@
+parameters:
+  path: ''
+  test: true
+  displayName: 'Build NPM'
+  skipDependencyChecks: false
+
+jobs:
+
+- job:
+  displayName: ${{ parameters.displayName }}
+  steps:
+
+  - template: /src/build/npm/steps/npm-package.steps.yaml
+    parameters:
+      path: ${{ parameters.path }}
+      test: ${{ parameters.test }}
+      skipDependencyChecks: ${{ parameters.skipDependencyChecks }}

@@ -1,0 +1,9 @@
+parameters:
+  path: ''
+
+steps:
+
+- task: npmAuthenticate@0
+  displayName: NPM Authenticate
+  inputs:
+    workingFile: $(Build.SourcesDirectory)/${{ parameters.path }}/.npmrc

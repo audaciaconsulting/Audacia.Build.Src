@@ -1,0 +1,25 @@
+parameters:
+  websiteName: ''
+  websitePath: ''
+  ipAddress: ''
+  hostname: ''
+  sslThumbprint: ''
+
+steps:
+  - task: IISWebAppManagementOnMachineGroup@0
+    displayName: 'Configure IIS'
+    inputs:
+      WebsiteName: ${{parameters.websiteName}}
+      WebsitePhysicalPath: ${{parameters.websitePath}}
+      AddBinding: true
+      Bindings: '{"bindings":[{"protocol":"https","ipAddress":"${{parameters.ipAddress}}","port":"443","hostname":"${{parameters.hostname}}","sslThumbprint":"${{parameters.sslThumbprint}}","sniFlag":false},{"protocol":"http","ipAddress":"${{parameters.ipAddress}}","port":"80","hostname":"${{parameters.hostname}}","sslThumbprint":"","sniFlag":false}]}'
+      CreateOrUpdateAppPoolForWebsite: true
+      AppPoolNameForWebsite: ${{parameters.websiteName}}
+      ParentWebsiteNameForVD: ${{parameters.websiteName}}
+      ParentWebsiteNameForApplication: ${{parameters.websiteName}}
+
+  - task: IISWebAppDeploymentOnMachineGroup@0
+    displayName: 'IIS Web App Deploy'
+    inputs:
+      WebSiteName: ${{parameters.websiteName}}
+      XmlVariableSubstitution: true

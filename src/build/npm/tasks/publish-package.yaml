@@ -1,0 +1,10 @@
+parameters:
+  path: ''
+
+steps:
+
+- task: PublishBuildArtifacts@1
+  displayName: Artifact Publish
+  inputs:
+    PathtoPublish: $(Build.SourcesDirectory)/${{ parameters.path }}
+    ArtifactName: $(Build.DefinitionName)

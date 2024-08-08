@@ -1,0 +1,51 @@
+parameters:
+- name: workingDirectory
+  type: string
+  default: '.'
+
+steps:
+  - powershell: Write-Host "##vso[task.setvariable variable=CYPRESS_CACHE_FOLDER;]$(Build.SourcesDirectory)/.cypress_cache"
+
+  - task: Npm@1
+    displayName: Install NPM Packages
+    inputs:
+      command: ci
+      workingDir: ${{parameters.workingDirectory}}
+      verbose: false
+
+  - task: Npm@1
+    displayName: Cypress Verify
+    inputs:
+      command: custom
+      workingDir: ${{parameters.workingDirectory}}
+      verbose: false
+      customCommand: run cypress:verify
+
+  # Temporarily use an internally forked version of FileTransform due to this bug: https://github.com/microsoft/azure-pipelines-tasks/issues/16821
+  - task: 106a9556-f58d-4016-9194-5b99f5aeb243@1
+    displayName: 'File Transform: cypress.json'
+    inputs:
+      folderPath: ${{parameters.workingDirectory}}
+      fileType: json
+      targetFiles: cypress.json
+
+  # Use script task to run the tests so the output is streamed whilst running, the Npm task does not do this
+  # This allows us to check the progress of the tests
+  - script: npm test
+    displayName: Cypress Run
+    workingDirectory: ${{parameters.workingDirectory}}
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish Test Failure Screenshots
+    condition: failed()
+    inputs:
+      path: ${{parameters.workingDirectory}}/cypress/screenshots
+      artifactName: FailureScreenshots
+
+  - task: PublishTestResults@2
+    displayName: Publish Test Results
+    condition: succeededOrFailed()
+    inputs:
+      searchFolder: ${{parameters.workingDirectory}}
+      testResultsFiles: 'results/**/test-results-*.xml'
+      mergeTestResults: true

@@ -1,0 +1,153 @@
+parameters:
+    # The Name of the Azure Service Connection to use
+  - name: azureSubscription
+    type: string
+    # The Email address to send ACME alerts to
+  - name: acmeContact
+    type: string
+    # The Let's Encrypt environment to use (LE_STAGE or LE_PROD)
+  - name: acmeDirectory
+    type: string
+    default: LE_PROD
+    # The Name of the Storage Account to store Posh-ACME data
+  - name: storageAccountName
+    type: string
+    # The Name of the Container to store Posh-ACME data
+  - name: storageAccountContainer
+    type: string
+    default: auto-renew-certificates
+    # The Name of the Key Vault to upload the certificates to
+  - name: keyVaultName
+    type: string
+    # An array of strings representing the wildcard domains to manage
+  - name: domains
+    type: object
+
+steps:
+  # Install the Posh-ACME Powershell Module
+  - task: AzureCLI@2
+    displayName: Install Posh-ACME
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript:  Install-Module Posh-ACME -Force -Scope AllUsers
+      powerShellErrorActionPreference: 'stop'
+      failOnStandardError: true
+
+  # Use Service Principal to login to AzCopy which will be used by the renewal script
+  - task: AzureCLI@2
+    displayName: AzCopy Login
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+          $env:AZCOPY_SPA_CLIENT_SECRET=$env:servicePrincipalKey
+          azcopy login --service-principal --application-id $env:servicePrincipalId --tenant-id $env:tenantId
+      addSpnToEnvironment: true
+      powerShellErrorActionPreference: 'stop'
+      failOnStandardError: true
+
+  # Create a Task for each Domain that should be checked
+  - ${{ each domain in parameters.domains }}:
+        # Order or renew a certificate via ACME
+        - task: AzureCLI@2
+          displayName: Renew '${{ domain }}'
+          inputs:
+            azureSubscription: ${{ parameters.azureSubscription }}
+            scriptType: pscore
+            scriptLocation: inlineScript
+            scriptArguments: >
+              -AcmeDirectory "${{ parameters.acmeDirectory }}"
+              -AcmeContact "${{ parameters.acmeContact }}"
+              -CertificateNames "${{ domain }}"
+              -StorageAccountName "${{ parameters.storageAccountName }}"
+              -StorageAccountContainer "${{ parameters.storageAccountContainer }}"
+              -KeyVaultName "${{ parameters.keyVaultName }}"
+            inlineScript: |
+              param (
+                  [string] $AcmeDirectory,
+                  [string] $AcmeContact,
+                  [string] $CertificateNames,
+                  [string] $StorageAccountName,
+                  [string] $StorageAccountContainer,
+                  [string] $KeyVaultName
+              )
+
+              # Supress progress messages. Azure DevOps doesn't format them correctly (used by New-PACertificate)
+              $global:ProgressPreference = 'SilentlyContinue'
+
+              # Split certificate names by comma or semi-colin
+              $CertificateNamesArr = $CertificateNames.Replace(',',';') -split ';' | ForEach-Object -Process { $_.Trim() }
+
+              # Create working directory
+              $workingDirectory = Join-Path -Path "." -ChildPath "pa"
+              if (!(Test-Path $workingDirectory)) {
+                  New-Item -Path $workingDirectory -ItemType Directory | Out-Null
+              }
+
+              # Set storage container URL
+              $containerUrl = "https://$($StorageAccountName).blob.core.windows.net/$($StorageAccountContainer)"
+
+              # Sync contents of storage container to working directory
+              Write-Host "##[section]Downloading cached PA data from blob storage..."
+              azcopy sync "$containerUrl" "$workingDirectory"
+              Write-Host "##[section]Downloaded cached PA data from blob storage."
+
+              # Set Posh-ACME working directory
+              $env:POSHACME_HOME = $workingDirectory
+              Import-Module Posh-ACME -Force
+
+              # Configure Posh-ACME server
+              Set-PAServer -DirectoryUrl $AcmeDirectory
+
+              # Configure Posh-ACME account
+              $account = Get-PAAccount
+              if (-not $account) {
+                  # New account
+                  $account = New-PAAccount -Contact $AcmeContact -AcceptTOS
+              }
+              elseif ($account.contact -ne "mailto:$AcmeContact") {
+                  # Update account contact
+                  Set-PAAccount -ID $account.id -Contact $AcmeContact
+              }
+
+              # Acquire access token for Azure (as we want to leverage the existing connection)
+              $azureSubscriptionId = az account show --query id --output tsv
+              $azureAccessToken = az account get-access-token --query accessToken --output tsv
+
+              # Request certificate
+              Write-Host "##[section]Requesting certificate..."
+
+              # Generate random password with 32 chars - special chars seem to cause issues with Key Vault Import
+              $passwordCharacters = 'a'..'z' + 'A'..'Z' + '0'..'9'
+              $pfxPass = -join (0..32 | ForEach-Object { $passwordCharacters | Get-Random })
+
+              $paPluginArgs = @{
+                  AZSubscriptionId = $azureSubscriptionId
+                  AZAccessToken    = $azureAccessToken;
+              }
+              $certificate = New-PACertificate -Domain $CertificateNamesArr -PfxPass $pfxPass -DnsPlugin Azure -PluginArgs $paPluginArgs
+
+              # Sync working directory back to storage container
+              azcopy sync "$workingDirectory" "$containerUrl"
+
+              if (-not $certificate) {
+                  Write-Host "##[section]No Certificate to upload."
+                  return
+              }
+
+              # Get the current certificate from key vault (if any)
+              $certificateName = $CertificateNames.Replace(',', ';') -split ';' | ForEach-Object -Process { $_.Trim() } | Select-Object -First 1
+              $azureKeyVaultCertificateName = $certificateName.Replace(".", "-").Replace("*", "star")
+              $azureKeyVaultCertificateThumbprint = az keyvault certificate show --vault-name $KeyVaultName --name $azureKeyVaultCertificateName --query x509Thumbprint --output tsv
+
+              # If we have a different certificate, import it
+              If (-not $azureKeyVaultCertificateThumbprint -or $azureKeyVaultCertificateThumbprint -ne $certificate.Thumbprint) {
+                  Write-Host "##[section]Importing new certificate to keyvault..."
+                  az keyvault certificate import --vault-name $KeyVaultName --name $azureKeyVaultCertificateName --file $certificate.PfxFile --password $pfxPass | Out-Null
+                  Write-Host "##[section]Imported new certificate to keyvault."
+              }
+            powerShellErrorActionPreference: 'stop'
+            failOnStandardError: true

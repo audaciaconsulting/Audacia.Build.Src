@@ -1,0 +1,36 @@
+﻿# Creates a self signed certificate
+parameters:
+  stepName: 'CreateSelfSignedCertificate'
+  certificateName: 'IdentityServer'
+  outputDirectory: ''
+  certificatePassword: ''
+
+steps:
+
+  - task: PowerShell@2
+    name: ${{ parameters.stepName }}
+    displayName: Create Self-Signed Certificate
+    inputs:
+      targetType: inline
+      errorActionPreference: 'stop'
+      failOnStderr: true
+      script: |
+        $CertificateName = "${{ parameters.certificateName }}"
+        $Password = "${{ parameters.certificatePassword }}"
+        $Directory = "${{ parameters.outputDirectory }}"
+
+        Write-Host "Creating the certificate..."
+        $cert = New-SelfSignedCertificate -KeyAlgorithm RSA -KeyLength 4096 -Type Custom -HashAlgorithm SHA256 -Subject "audacia" -KeyExportPolicy Exportable -CertStoreLocation "cert:\CurrentUser\My"
+
+        Write-Host "Exporting the certificate as a pfx file..."
+        $filepath = Join-Path -Path $Directory -ChildPath "$CertificateName.pfx"
+        $certPassword = ConvertTo-SecureString -String $Password -Force -AsPlainText
+        Export-PfxCertificate -Cert $cert -FilePath $filepath -Password $certPassword
+
+        $certThumbprint = $cert.Thumbprint
+        Write-Host "##vso[task.setvariable variable=certificate_thumbprint;isOutput=true]$certThumbprint"
+
+        Write-Host "Deleting the certificate from the store..."
+        Get-ChildItem "Cert:\CurrentUser\My\$certThumbprint" | Remove-Item
+
+        Write-Host "Done"

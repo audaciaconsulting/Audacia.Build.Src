@@ -1,0 +1,73 @@
+# Sets the Connection String on an Azure Web Application Deployment Slot to the specified SQL Server Database
+parameters:
+  azureSubscription: '' # Service Principle name to access the Azure Environment
+  resourceGroupName: '' # Name of the Azure Resource Group containing the application
+  applicationName: '' # Name of the Azure Wep Application
+  slotName: 'Production' # Name of the Azure Web App Slot. defaults to Production the slot
+  dbContextName: '' # The name of the database context for your project
+  connectionString: '' # The connection string for your database context
+
+steps:
+  - task: AzurePowerShell@3 # AzureRM is supported by version 2 & 3
+    displayName: "Set ${{ parameters.dbContextName }} Connection String for ${{ parameters.applicationName }} ${{ parameters.slotName }}"
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: inlineScript
+      errorActionPreference: 'stop'
+      failOnStandardError: true
+      azurePowerShellVersion: 'latestVersion'
+      inline: |
+        $ResourceGroup = "${{ parameters.resourceGroupName }}"
+        $AppName = "${{ parameters.applicationName }}"
+        $SlotName = "${{ parameters.slotName }}"
+        $DbContext = "${{ parameters.dbContextName }}"
+        $ConnectionString = "${{ parameters.connectionString }}"
+
+        # grab the existing configuration
+        Write-Host "##vso[task.logdetail id=7332a6da-76a9-4765-945d-6cab83fed79d;name=actions;type=command;order=1]Actions"
+        Write-Host "##vso[task.logdetail id=8bba3f69-122b-45a8-843d-721433ff7490;parentid=7332a6da-76a9-4765-945d-6cab83fed79d;name=actions;type=command;order=1]Getting Resource ($ResourceGroup) App ($AppName) Slot ($SlotName)"
+        $slot = Get-AzureRmWebAppSlot -ResourceGroupName $ResourceGroup -Name $AppName -Slot $SlotName
+
+        Write-Host "##vso[task.logdetail id=488a3c8b-53c7-497c-acb5-3561b06090f8;parentid=7332a6da-76a9-4765-945d-6cab83fed79d;name=actions;type=command;order=1]Getting Slot Configuration"
+        $slotConfig = Get-AzureRmWebAppSlotConfigName -ResourceGroupName $ResourceGroup -Name $AppName
+
+        # determine if we need to update the connection string
+        $existingSetting = $slot.SiteConfig.ConnectionStrings | Where-Object Name -eq $DbContext
+        $isMissing = $null -eq $existingSetting
+        $isNotUpToDate = !$isMissing -and $existingSetting.ConnectionString -ne $ConnectionString
+
+        if ($isMissing -or $isNotUpToDate)
+        {
+            Write-Host "##vso[task.logdetail id=f2f5b234-f8b9-42c1-bdb6-19ac14176edf;parentid=7332a6da-76a9-4765-945d-6cab83fed79d;name=actions;type=command;order=1]Updating value for $DbContext."
+            # Copy all existing connection strings
+            # ref: https://github.com/Azure/azure-powershell/issues/1460#issuecomment-169232893
+            $databaseSettings = @{
+                $DbContext = @{ "Type"="SQLAzure"; "Value"=$ConnectionString }
+            }
+            foreach ($option in $slot.SiteConfig.ConnectionStrings)
+            {
+                if ($databaseSettings.ContainsKey($option.Name) -eq $false)
+                {
+                    $databaseSettings[$option.Name] = @{ "Type"="SQLAzure"; "Value"=$option.ConnectionString }
+                }
+            }
+
+            Set-AzureRmWebAppSlot -ResourceGroupName $ResourceGroup -Name $AppName -Slot $SlotName -ConnectionStrings $databaseSettings | out-null
+        }
+
+        # determine if we need to make the connection string a slot setting
+        $slotHasConnectionStr = $null -ne $slotConfig.ConnectionStringNames
+        $isSlotSetting = $slotHasConnectionStr -and $slotConfig.ConnectionStringNames.Contains($DbContext)
+        if ($isSlotSetting -eq $false)
+        {
+            Write-Host "##vso[task.logdetail id=78d3352f-b144-4c68-8951-b1713ef333b8;parentid=7332a6da-76a9-4765-945d-6cab83fed79d;name=actions;type=command;order=1]Updating $DbContext to be a slot setting."
+            $connectionStringNames = @($DbContext)
+            foreach ($otherBbContext in $slotConfig.ConnectionStringNames)
+            {
+                $connectionStringNames += $otherBbContext
+            }
+
+            Set-AzureRmWebAppSlotConfigName -Name $AppName -ResourceGroupName $ResourceGroup -ConnectionStringNames $connectionStringNames | out-null
+        }
+
+        Write-Host "##vso[task.logdetail id=ee3ff285-3c27-4d08-bdbc-39cb3540d9d7;parentid=7332a6da-76a9-4765-945d-6cab83fed79d;name=actions;type=command;order=1]The connection string for $DbContext is now up to date."

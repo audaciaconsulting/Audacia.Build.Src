@@ -1,0 +1,13 @@
+parameters:
+  environment: NuGet Internal
+
+jobs:
+- deployment: Deploy
+  displayName: Deploy to NuGet (Internal Private)
+  environment: ${{ parameters.environment }}
+  condition: and(succeeded(), and(not(eq(variables['Build.Reason'], 'PullRequest')), not(eq(variables['Build.Reason'], 'Schedule'))))
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - template: /src/deployment/nuget/steps/internal-private-nuget-package.steps.yaml

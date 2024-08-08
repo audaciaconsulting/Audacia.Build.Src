@@ -1,0 +1,1 @@
+winpty openssl pkcs12 -export -out IdentityServer.pfx -inkey IdentityServer.key -in IdentityServer.crt -certfile IdentityServer.crt

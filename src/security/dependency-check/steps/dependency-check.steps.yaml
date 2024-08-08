@@ -1,0 +1,26 @@
+parameters:
+  - name: npmProjects   # Array of NPM projects to check
+    type: object        # Provide an array containing objects of: { name: 'UI', path: 'folder/containing/package', suppressionsFilePath: 'optional/path/to/suppressions.xml' }
+    default: []
+  - name: dotnetSuppressionsFilePath # Path to the .NET suppressions.xml file
+    type: string
+    default: '$(Build.SourcesDirectory)/suppressions.xml'
+
+steps:
+
+  - ${{ each project in parameters.npmProjects }}:
+    - template: /src/security/dependency-check/tasks/npm-dependency-check.yaml@templates
+      parameters:
+        path: ${{ project.path }}
+        projectName: ${{ project.name }}
+        ${{ if project.suppressionsFilePath }}:
+          suppressionsFilePath: ${{ project.suppressionsFilePath }}
+        publishAs: Dependency Check Result (${{ project.name }})
+        runEvenIfError: true
+
+  - template: /src/security/dependency-check/tasks/nuget-dependency-check.yaml@templates
+    parameters:
+      displayName: .NET Dependency Check
+      publishAs: Dependency Check Result (.NET)
+      runEvenIfError: true
+      suppressionsFilePath: ${{ parameters.dotnetSuppressionsFilePath }}

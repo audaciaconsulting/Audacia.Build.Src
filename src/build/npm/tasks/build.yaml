@@ -1,0 +1,11 @@
+parameters:
+  path: ''
+
+steps:
+
+- task: Npm@1
+  displayName: NPM Build
+  inputs:
+    command: custom
+    workingDir: '$(Build.SourcesDirectory)/${{ parameters.path }}'
+    customCommand: 'run build'

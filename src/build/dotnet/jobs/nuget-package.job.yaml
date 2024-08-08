@@ -1,0 +1,26 @@
+parameters:
+  projects: '**/*.csproj'
+  tests: '**/*Tests/*.csproj'
+  displayName: 'Build Package'
+  skipDependencyChecks: false
+  signAssemblies: true
+  releaseBranchName: 'master'
+  packageSource: 'internalPublic'
+
+jobs:
+
+- job:
+  displayName: ${{ parameters.displayName }}
+  variables:
+  - group: Code Signing
+
+  steps:
+
+  - template: /src/build/dotnet/steps/nuget-package.steps.yaml
+    parameters:
+      projects: ${{parameters.projects}}
+      tests: ${{parameters.tests}}
+      skipDependencyChecks: ${{parameters.skipDependencyChecks}}
+      signAssemblies: ${{parameters.signAssemblies}}
+      releaseBranchName: ${{parameters.releaseBranchName}}
+      packageSource: ${{parameters.packageSource}}

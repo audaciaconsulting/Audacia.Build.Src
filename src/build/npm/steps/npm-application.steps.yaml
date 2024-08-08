@@ -1,0 +1,27 @@
+parameters:
+  path: ''
+  test: true
+  displayName: 'Build NPM'
+
+steps:
+
+- template: /src/build/npm/tasks/authenticate.yaml
+  parameters:
+    path: ${{ parameters.path }}
+
+- template: /src/build/npm/tasks/install.yaml
+  parameters:
+    path: ${{ parameters.path }}
+
+- template: /src/build/npm/tasks/build.yaml
+  parameters:
+    path: ${{ parameters.path }}
+
+- template: /src/build/npm/tasks/test.yaml
+  parameters:
+    path: ${{ parameters.path }}
+    test: ${{ parameters.test }}
+
+- template: /src/build/npm/tasks/publish.yaml
+  parameters:
+    path: ${{ parameters.path }}

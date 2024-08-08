@@ -1,0 +1,18 @@
+﻿# Runs a console app on an Azure Web Application in the specified location
+# ref: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process?view=powershell-7#example-7--specifying-arguments-to-the-process
+parameters:
+  filePath: '' # File path to the deployed application
+  displayName: 'Running Console App'  # Display name for the step
+  args: '' # Parameters to pass in as args, this should either be a csv or wrapped in double quotes per argument
+  workingDirectory: '$(Pipeline.Workspace)' # Sets the default working directory, this should be the directory where the .exe is located
+
+steps:
+  - task: PowerShell@2
+    displayName: ${{ parameters.displayName }}
+    inputs:
+      targetType: inline
+      errorActionPreference: 'stop'
+      failOnStderr: true
+      workingDirectory: ${{ parameters.workingDirectory }}
+      script: |
+        Start-Process -NoNewWindow -FilePath '${{ parameters.filePath }}' -ArgumentList '${{ parameters.args }}'
