@@ -8,23 +8,56 @@ parameters:
 steps:
 
   - ${{ if eq(parameters.applyVersioning, true) }}:
-    - template: /src/build/dotnet/tasks/netcore/version.yaml
+    task: UpdateDotNetVersions@12
+    displayName: .NET Versioning
+    inputs:
+      releaseBranchNames: 'master,main'
+        ExcludePreReleasePostfix: false
+        workingDirectory: ''
+        includeCsproj: true
+        includeNuspec: false
+        packageSource: 'internalPublic'
+        excludePaths: '*.Tests.csproj'
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-  - template: /src/build/dotnet/tasks/netcore/restore.yaml
-    parameters:
+  - task: DotNetCoreCLI@2
+    displayName: .NET Restore
+    inputs:
+      command: restore
+      projects: '${{parameters.projects}}'
+      vstsFeed: 'Audacia.Public/AudaciaPublic'
+
+  - task: DotNetCoreCLI@2
+    displayName: .NET Build
+    inputs:
+      command: build
+      projects: ${{ parameters.projects}}
+      publishWebProjects: false
+      arguments: >
+        --configuration Release
+        --no-restore
+
+  - task: DotNetCoreCLI@2
+    displayName: .NET Test
+    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    inputs:
+      command: test
+      projects: ${{ parameters.projects }}
+      arguments: '--collect "Code coverage"'
+      configuration: 'Release'
+
+  - task: DotNetCoreCLI@2
+    displayName: .NET Publish
+    inputs:
+      command: publish
+      publishWebProjects: false
       projects: ${{parameters.projects}}
-
-  - template: /src/build/dotnet/tasks/netcore/build.yaml
-    parameters:
-      projects: ${{parameters.projects}}
-
-  - template: /src/build/dotnet/tasks/netcore/test.yaml
-    parameters:
-      projects: ${{parameters.tests}}
-      shouldRunTests: ${{ parameters.shouldRunTests }}
-
-  - template: /src/build/dotnet/tasks/netcore/publish.yaml
-    parameters:
-      projects: ${{parameters.projects}}
+      arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory) --no-restore --no-build'
+      zipAfterPublish: false
+      modifyOutputPath: true
 
   - template: /src/build/common/tasks/publish.yaml
+    parameters:
+      path: ''
+      artifactName: '$(Build.DefinitionName)'

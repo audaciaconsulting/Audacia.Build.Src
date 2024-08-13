@@ -10,23 +10,39 @@ steps:
 
   - ${{ if eq(parameters.applyVersioning, true) }}:
     - template: /src/build/dotnet/tasks/netcore/version.yaml
+      parameters:
+        releaseBranchNames: 'master,main'
+        ExcludePreReleasePostfix: false
+        workingDirectory: ''
+        includeCsproj: true
+        includeNuspec: false
+        packageSource: 'internalPublic'
+        excludePaths: '*.Tests.csproj'
 
   - task: NuGetToolInstaller@1
     displayName: Get Nuget
     inputs:
       versionSpec: '4.9.3'
 
-  - template: /src/build/dotnet/tasks/netfx/restore.yaml
-    parameters:
-      projects: ${{parameters.projects}}
+  - task: NuGetCommand@2
+    displayName: 'NuGet restore'
+    inputs:
+      restoreSolution: ${{parameters.projects}}
+      vstsFeed: 'Audacia.Public/AudaciaPublic'
 
-  - template: /src/build/dotnet/tasks/netfx/build.yaml
-    parameters:
-      projects: ${{parameters.projects}}
+  - task: MSBuild@1
+    displayName: ${{parameters.displayName}}
+    inputs:
+      solution: '${{parameters.projects}}'
+      msbuildArchitecture: 'x64'
+      configuration: 'Release'
+      msbuildArguments: '/p:outdir="${{parameters.outDir}}"'
 
-  - template: /src/build/dotnet/tasks/netfx/test.yaml
-    parameters:
-      testAssemblies: ${{parameters.testAssemblies}}
+  - task: VSTest@2
+    displayName: 'Test Assemblies'
+    inputs:
+      configuration: 'Release'
+      testAssemblyVer2: ${{parameters.testAssemblies}}
 
   - template: /src/build/common/tasks/publish.yaml
     parameters:

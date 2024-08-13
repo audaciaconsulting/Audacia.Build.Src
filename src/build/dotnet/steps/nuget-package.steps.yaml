@@ -13,25 +13,61 @@ steps:
       skip: ${{ parameters.skipDependencyChecks }}
       continueIfVulnerabilities: true
 
-  - template: /src/build/dotnet/tasks/netcore/version.yaml
-    parameters:
-      releaseBranchName: ${{parameters.releaseBranchName}}
-      packageSource: ${{parameters.packageSource}}
+  - ${{ if eq(parameters.applyVersioning, true) }}:
+   - task: UpdateDotNetVersions@12
+    displayName: .NET Versioning
+    inputs:
+      releaseBranchNames: 'master,main'
+        ExcludePreReleasePostfix: false
+        workingDirectory: ''
+        includeCsproj: true
+        includeNuspec: false
+        packageSource: 'internalPublic'
+        excludePaths: '*.Tests.csproj'
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-  - template: /src/build/dotnet/tasks/netcore/restore.yaml
-    parameters: { projects: '${{parameters.projects}}' }
+  - task: DotNetCoreCLI@2
+    displayName: .NET Restore
+    inputs:
+      command: restore
+      projects: '${{parameters.projects}}'
+      vstsFeed: 'Audacia.Public/AudaciaPublic'
 
-  - template: /src/build/dotnet/tasks/netcore/build.yaml
-    parameters: { projects: '${{parameters.projects}}' }
+  - task: DotNetCoreCLI@2
+    displayName: .NET Build
+    inputs:
+      command: build
+      projects: ${{ parameters.projects}}
+      publishWebProjects: false
+      arguments: >
+        --configuration Release
+        --no-restore
 
-  - template: /src/build/dotnet/tasks/netcore/test.yaml
-    parameters: { projects: '${{parameters.tests}}' }
+  - task: DotNetCoreCLI@2
+    displayName: .NET Test
+    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    inputs:
+      command: test
+      projects: ${{ parameters.projects }}
+      arguments: '--collect "Code coverage"'
+      configuration: 'Release'
 
   - ${{ if eq(parameters.signAssemblies, true) }}:
     - template: /src/build/dotnet/tasks/netcore/assembly-sign.yaml
       parameters: { projects: '${{parameters.projects}}' }
 
-  - template: /src/build/dotnet/tasks/netcore/pack.yaml
-    parameters: { projects: '${{parameters.projects}}' }
+  - task: DotNetCoreCLI@2
+    displayName: .NET Pack
+    condition: and(succeeded(), and(not(eq(variables['Build.Reason'], 'PullRequest')), not(eq(variables['Build.Reason'], 'Schedule'))))
+    inputs:
+      command: pack
+      nobuild: true
+      includesymbols: false
+      configuration: 'Release'
+      packagesToPack: ${{parameters.projects}}
 
   - template: /src/build/common/tasks/publish.yaml
+    parameters:
+      artifactName: ${{parameters.artifactName}}
+      path: ${{parameters.artifactPath}}
