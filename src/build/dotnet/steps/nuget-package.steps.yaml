@@ -14,16 +14,16 @@ steps:
       continueIfVulnerabilities: true
 
   - ${{ if eq(parameters.applyVersioning, true) }}:
-   - task: UpdateDotNetVersions@12
+  - task: UpdateDotNetVersions@12
     displayName: .NET Versioning
     inputs:
       releaseBranchNames: 'master,main'
-        ExcludePreReleasePostfix: false
-        workingDirectory: ''
-        includeCsproj: true
-        includeNuspec: false
-        packageSource: 'internalPublic'
-        excludePaths: '*.Tests.csproj'
+      ExcludePreReleasePostfix: false
+      workingDirectory: ''
+      includeCsproj: true
+      includeNuspec: false
+      packageSource: 'internalPublic'
+      excludePaths: '*.Tests.csproj'
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
