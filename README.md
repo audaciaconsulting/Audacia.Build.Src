@@ -1,6 +1,6 @@
 # Overview
 
-The `Audacia.Build.Src` repo contains multiple different general purpose yaml files for various build pipelines
+The `Audacia.Build` repo contains multiple different general purpose yaml files for various build pipelines
 
 
 # Contributing
