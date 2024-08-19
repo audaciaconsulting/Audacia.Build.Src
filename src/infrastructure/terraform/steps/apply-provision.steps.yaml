@@ -1,0 +1,24 @@
+# Job template to provision resources in a specific environment
+parameters:
+  terraformDirectory: ''
+  environmentServiceConnector: '' # Subscription to provision resources in
+
+steps:
+  - checkout: self
+
+  - task: ManualValidation@0
+    inputs:
+      notifyUsers: $(AlertEmailAddress) # string. Required. Notify users. 
+      #instructions: # string. Instructions. 
+      #onTimeout: 'reject' # 'reject' | 'resume'. On timeout. Default: reject.
+
+  # Only runs if the 'terraformPlan' task has detected changes the in state. 
+  - task: TerraformTaskV4@4
+    displayName: Apply Terraform Plan
+    condition: eq(variables['terraformPlan.changesPresent'], 'true')
+    inputs:
+      provider: 'azurerm'
+      command: 'apply'
+      commandOptions: 'main.tfplan'
+      workingDirectory: ${{parameters.terraformDirectory}}
+      environmentServiceNameAzureRM: ${{ parameters.environmentServiceConnector }}
