@@ -6,7 +6,6 @@ parameters:
   databaseConnectionStringName: ''
 
 steps:
-
   - task: NuGetAuthenticate@0
 
   - script: |

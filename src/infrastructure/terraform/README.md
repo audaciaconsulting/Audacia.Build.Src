@@ -27,14 +27,6 @@ The `get-resource-name` step gets the `name` variable from the Terraform inputs 
 
 The `set-variable` step adds a variable to the `terraform.tfvars` file. The given variable should already be defined in the `variables.tf` file.
 
-### init.yaml
-
-The `init` step initialises Terraform, including setting up the connection to state storage. It must be run before `apply`.
-
-### apply.yaml
-
-The `apply` step actually provisions the resources as defined by the Terraform scripts.
-
 ### expand-variables.yaml
 
 The `expand-variables` step adds each Terraform output as a pipeline variable so that they can be consumed by subsequent pipeline steps.

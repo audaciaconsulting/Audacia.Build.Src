@@ -22,33 +22,33 @@ steps:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Restore
-      inputs:
-        command: restore
-        projects: '${{parameters.projects}}'
-        vstsFeed: 'Audacia.Public/AudaciaPublic'
+    displayName: '.NET Restore'
+    inputs:
+      command: restore
+      projects: '${{parameters.projects}}'
+      vstsFeed: 'Audacia.Public/AudaciaPublic'
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Build
-      inputs:
-        command: build
-        projects: ${{ parameters.projects}}
-        publishWebProjects: false
-        arguments: >
-          --configuration Release
-          --no-restore
+    displayName: '.NET Build'
+    inputs:
+      command: build
+      projects: ${{ parameters.projects}}
+      publishWebProjects: false
+      arguments: >
+        --configuration Release
+        --no-restore
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Test
-      condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
-      inputs:
-        command: test
-        projects: ${{ parameters.projects }}
-        arguments: '--collect "Code coverage"'
-        configuration: 'Release'
+    displayName: '.NET Test'
+    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    inputs:
+      command: test
+      projects: ${{ parameters.projects }}
+      arguments: '--collect "Code coverage"'
+      configuration: 'Release'
 
   - task: DotNetCoreCLI@2
-    displayName: .NET Publish
+    displayName: '.NET Publish'
     inputs:
       command: publish
       publishWebProjects: false
@@ -58,6 +58,6 @@ steps:
       modifyOutputPath: true
 
   - template: /src/build/common/tasks/publish.yaml
-      parameters:
-        path: ''
-        artifactName: '$(Build.DefinitionName)'
+    parameters:
+      path: ''
+      artifactName: '$(Build.DefinitionName)'

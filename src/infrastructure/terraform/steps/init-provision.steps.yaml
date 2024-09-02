@@ -1,67 +1,44 @@
-# Job template to provision resources in a specific environment
+# Steps template to validate and create a plan for provisioning resources
 parameters:
   terraformDirectory: ''
   customer: '' # Name of the customer, e.g. Solus, TechBuyer, ADM
-  environmentSuffix: '' # Suffix to apply to Azure resources, e.g. 'qa', 'uat' or in the case of the production environment, ''; also used to tag the resource group with the appropriate environment (if set to '' then 'production' is used for the tag)
   environmentId: '' # Name of the environment in Azure, primarily used to suffix the container used for storing Terraform state, e.g. 'qa', 'uat', 'live'
   terraformStateServicePrincipal: '' # Subscription to store backend in
   environmentServicePrincipal: '' # Subscription to provision resources in
-  terraformResourceGroup: 'audacia-devops'
-  terraformStorageAccount: 'audaciaterraform'
+  terraformResourceGroup: ''
+  terraformStorageAccount: ''
 
 steps:
   - checkout: self
 
-  - template: ../tasks/get-resource-name.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-
-  - template: ../tasks/set-variable.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      variableName: environment
-      variableValue: ${{ parameters.environmentSuffix }}
-
-  - template: ../tasks/set-variable.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      variableName: customer
-      variableValue: ${{ parameters.customer }}
-
-  - template: ../tasks/set-variable.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      variableName: sql_server_username
-      variableValue: $(SqlUsername)
-
-  - template: ../tasks/set-variable.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      variableName: sql_server_password
-      variableValue: $(SqlPassword)
-
-  - template: ../tasks/set-variable.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      variableName: alert_email_address
-      variableValue: $(AlertEmailAddress)
-
   - template: ../tasks/create-storage.yaml
     parameters:
       storageContainerName: $(ResourceName)-${{ parameters.environmentId }}
-      subscription: ${{ parameters.environmentServicePrincipal }}
-      
+      backendStorageAccount: $(terraformStorageAccount)
+      subscription: ${{ parameters.terraformStateServicePrincipal }}
+
+  - task: TerraformInstaller@1
+    displayName: Install Terraform
+
   - task: TerraformTaskV4@4
     displayName: Initialize Terraform
     name: TerraformInit
     inputs:
       provider: 'azurerm'
       command: 'init'
+      workingDirectory: ${{parameters.terraformDirectory}}
       backendServiceArm: ${{parameters.terraformStateServicePrincipal}}
-      backendAzureRmResourceGroupName: $(terraformResourceGroup)
-      backendAzureRmStorageAccountName: $(terraformStorageAccount)
-      backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
-      backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
+      backendAzureRmResourceGroupName: ${{parameters.terraformResourceGroup}}
+      backendAzureRmStorageAccountName: ${{parameters.terraformStorageAccount}}
+      backendAzureRmContainerName: $(ResourceName)-${{ parameters.environmentId }}
+      backendAzureRmKey: $(ResourceName)-${{ parameters.environmentId }}.tfstate
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Validate'
+    inputs:
+      provider: 'azurerm'
+      command: 'validate'
+      workingDirectory: ${{parameters.terraformDirectory}}
 
   - task: TerraformTaskV4@4
     name: terraformPlan
@@ -71,3 +48,9 @@ steps:
       command: 'plan'
       commandOptions: '-out main.tfplan'
       environmentServiceNameAzureRM: ${{ paramaters.environmentServicePrincipal}}
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Terraform Plan'
+    inputs:
+      targetPath: '${{parameters.terraformDirectory}}'
+      artifact: 'terraform'

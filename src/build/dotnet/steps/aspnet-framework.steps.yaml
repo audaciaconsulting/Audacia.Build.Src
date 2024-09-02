@@ -7,20 +7,19 @@ parameters:
   applyVersioning: true
 
 steps:
-
    - ${{ if eq(parameters.applyVersioning, true) }}:
-   	- task: UpdateDotNetVersions@12
-     		displayName: .NET Versioning
-     		inputs:
-      		releaseBranchNames: 'master,main'
-      		ExcludePreReleasePostfix: false
-      		workingDirectory: ''
-      		includeCsproj: true
-      		includeNuspec: false
-      		packageSource: 'internalPublic'
-      		excludePaths: '*.Tests.csproj'
-      		env:
-			SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      - task: UpdateDotNetVersions@12
+        displayName: .NET Versioning
+        inputs:
+          releaseBranchNames: 'master,main'
+          ExcludePreReleasePostfix: false
+          workingDirectory: ''
+          includeCsproj: true
+          includeNuspec: false
+          packageSource: 'internalPublic'
+          excludePaths: '*.Tests.csproj'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
    - task: NuGetToolInstaller@1
      displayName: Get Nuget

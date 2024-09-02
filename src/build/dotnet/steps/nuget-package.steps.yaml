@@ -9,8 +9,8 @@ parameters:
   applyVersioning: true
   path: ''
   artifactName: '$(Build.DefinitionName)'
-steps:
 
+steps:
   - template: /src/security/dependency-check/tasks/nuget-dependency-check.yaml
     parameters:
       skip: ${{ parameters.skipDependencyChecks }}
@@ -18,7 +18,7 @@ steps:
 
   - ${{ if eq(parameters.applyVersioning, true) }}:
     - task: UpdateDotNetVersions@12
-        displayName: .NET Versioning
+      displayName: .NET Versioning
       inputs:
         releaseBranchNames: 'master,main'
         ExcludePreReleasePostfix: false
@@ -31,46 +31,46 @@ steps:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Restore
-      inputs:
-        command: restore
-        projects: '${{parameters.projects}}'
-        vstsFeed: 'Audacia.Public/AudaciaPublic'
+    displayName: .NET Restore
+    inputs:
+      command: restore
+      projects: '${{parameters.projects}}'
+      vstsFeed: 'Audacia.Public/AudaciaPublic'
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Build
-      inputs:
-        command: build
-        projects: ${{ parameters.projects}}
-        publishWebProjects: false
-        arguments: >
-          --configuration Release
-          --no-restore
+    displayName: .NET Build
+    inputs:
+      command: build
+      projects: ${{ parameters.projects}}
+      publishWebProjects: false
+      arguments: >
+        --configuration Release
+        --no-restore
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Test
-      condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
-      inputs:
-      command: test
-      projects: ${{ parameters.projects }}
-      arguments: '--collect "Code coverage"'
-      configuration: 'Release'
+    displayName: .NET Test
+    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    inputs:
+    command: test
+    projects: ${{ parameters.projects }}
+    arguments: '--collect "Code coverage"'
+    configuration: 'Release'
 
   - ${{ if eq(parameters.signAssemblies, true) }}:
     - template: /src/build/dotnet/tasks/netcore/assembly-sign.yaml
       parameters: { projects: '${{parameters.projects}}' }
 
   - task: DotNetCoreCLI@2
-      displayName: .NET Pack
-      condition: and(succeeded(), and(not(eq(variables['Build.Reason'], 'PullRequest')), not(eq(variables['Build.Reason'], 'Schedule'))))
-      inputs:
-        command: pack
-        nobuild: true
-        includesymbols: false
-        configuration: 'Release'
-        packagesToPack: ${{parameters.projects}}
+    displayName: .NET Pack
+    condition: and(succeeded(), and(not(eq(variables['Build.Reason'], 'PullRequest')), not(eq(variables['Build.Reason'], 'Schedule'))))
+    inputs:
+      command: pack
+      nobuild: true
+      includesymbols: false
+      configuration: 'Release'
+      packagesToPack: ${{parameters.projects}}
 
   - template: /src/build/common/tasks/publish.yaml
-      parameters:
-        artifactName: ${{parameters.artifactName}}
-        path: ${{parameters.artifactPath}}
+    parameters:
+      artifactName: ${{parameters.artifactName}}
+      path: ${{parameters.artifactPath}}
