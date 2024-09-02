@@ -5,53 +5,53 @@ parameters:
 steps:
 
   - ${{ if eq(parameters.applyVersioning, true) }}:
-  - task: UpdateDotNetVersions@12
-    displayName: .NET Versioning
-    inputs:
-      releaseBranchNames: 'master,main'
-      ExcludePreReleasePostfix: false
-      workingDirectory: ''
-      includeCsproj: true
-      includeNuspec: false
-      packageSource: 'internalPublic'
-      excludePaths: '*.Tests.csproj'
-    env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    - task: UpdateDotNetVersions@12
+        displayName: .NET Versioning
+      inputs:
+        releaseBranchNames: 'master,main'
+        ExcludePreReleasePostfix: false
+        workingDirectory: ''
+        includeCsproj: true
+        includeNuspec: false
+        packageSource: 'internalPublic'
+        excludePaths: '*.Tests.csproj'
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - task: NuGetToolInstaller@1
-    displayName: Get NuGet
+      displayName: Get NuGet
 
   - task: NuGetCommand@2
-    displayName: Restore
+      displayName: Restore
 
   - task: DotNetCoreCLI@2
-    displayName: .NET Build
-    inputs:
-      command: build
-      projects: ${{ parameters.projects}}
-      publishWebProjects: false
-      arguments: >
+      displayName: .NET Build
+      inputs:
+        command: build
+        projects: ${{ parameters.projects}}
+        publishWebProjects: false
+        arguments: >
         --configuration Release
         --no-restore
 
   - task: DotNetCoreCLI@2
-    displayName: .NET Test
-    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
-    inputs:
-      command: test
-      projects: ${{ parameters.testPath }}
-      arguments: '--collect "Code coverage"'
-      configuration: 'Release'
+      displayName: .NET Test
+      condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+      inputs:
+        command: test
+        projects: ${{ parameters.testPath }}
+        arguments: '--collect "Code coverage"'
+        configuration: 'Release'
 
   - task: NuGetCommand@2
-    displayName: NuGet Pack
-    inputs:
-      command: 'pack'
-      configuration: 'release'
-      packagesToPack: $(Build.SourcesDirectory)\${{parameters.packagePath}}
-      versioningScheme: 'off'
+      displayName: NuGet Pack
+      inputs:
+        command: 'pack'
+        configuration: 'release'
+        packagesToPack: $(Build.SourcesDirectory)\${{parameters.packagePath}}
+        versioningScheme: 'off'
 
   - template: /src/build/common/tasks/publish.yaml
-    parameters:
-      path: ''
-      artifactName: '$(Build.DefinitionName)'
+      parameters:
+        path: ''
+        artifactName: '$(Build.DefinitionName)'
