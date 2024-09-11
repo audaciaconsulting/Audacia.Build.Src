@@ -1,6 +1,9 @@
 parameters:
+  projects: '**/*.csproj'
   packagePath: '**/*.csproj;-:**/*Tests/*.csproj'
   testPath: '**/*Tests/*.csproj'
+  shouldRunTests: true
+  applyVersioning: true
 
 steps:
   - ${{ if eq(parameters.applyVersioning, true) }}:

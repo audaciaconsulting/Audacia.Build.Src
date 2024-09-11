@@ -3,7 +3,13 @@ parameters:
   configuration: 'release'
   testPath: '**/*Tests/*.csproj'
   skipDependencyChecks: false
-  releaseBranchName: 'master'
+  releaseBranchName: 'master,main'
+  excludePreReleasePostfix: false
+  workingDirectory: '' # The working directory containing relevant csproj and nuspec files; if not set then $(Build.SourcesDirectory) is used.
+  includeCsproj: true
+  includeNuspec: false
+  packageSource: 'internalPublic' # Where the package is published; should be one of 'public', 'internalPrivate' or 'internalPublic'
+  excludePaths: '*.Tests.csproj' # Comma-delimited paths to exclude from versioning
 
 steps:
 
@@ -13,13 +19,13 @@ steps:
 
   - template: /src/build/dotnet/tasks/netcore/version.yaml
     parameters:
-      releaseBranchNames: 'master,main'
-      ExcludePreReleasePostfix: false
-      workingDirectory: ''
-      includeCsproj: true
-      includeNuspec: false
-      packageSource: 'public'
-      excludePaths: '*.Tests.csproj'
+      releaseBranchNames: ${{parameters.releaseBranchName}}
+      ExcludePreReleasePostfix: ${{parameters.excludePreReleasePostfix}}
+      workingDirectory: ${{parameters.workingDirectory}}
+      includeCsproj: ${{parameters.includeCsproj}}
+      includeNuspec: ${{parameters.includeNuspec}}
+      packageSource: ${{parameters.packageSource}}
+      excludePaths: ${{parameters.excludePaths}}
 
   - task: DotNetCoreCLI@2
     displayName: .NET Restore

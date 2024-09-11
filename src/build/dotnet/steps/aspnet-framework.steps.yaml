@@ -1,10 +1,10 @@
-parameters:
-  displayName: 'Build .NET'
+parameters: 
   projects: '**/*.csproj'
   testAssemblies: '**\\*test*.dll\n!**\\*TestAdapter.dll\n!**\\obj\\**'
   artifactName: '$(Build.DefinitionName)'
   artifactPath: ''
   applyVersioning: true
+  outDir: '$(Build.ArtifactStagingDirectory)'
 
 steps:
    - ${{ if eq(parameters.applyVersioning, true) }}:
@@ -33,7 +33,7 @@ steps:
       vstsFeed: 'Audacia.Public/AudaciaPublic'
 
    - task: MSBuild@1
-     displayName: ${{parameters.displayName}}
+     displayName: 'Build .NET'
      inputs:
       solution: '${{parameters.projects}}'
       msbuildArchitecture: 'x64'

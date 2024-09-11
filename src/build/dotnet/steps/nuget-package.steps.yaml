@@ -3,12 +3,17 @@ parameters:
   tests: '**/*Tests/*.csproj'
   skipDependencyChecks: false
   signAssemblies: true
-  releaseBranchName: 'master'
-  packageSource: 'internalPublic'
+  releaseBranchName: 'master,main'
   shouldRunTests: true
   applyVersioning: true
-  path: ''
+  artifactPath: ''
   artifactName: '$(Build.DefinitionName)'
+  excludePreReleasePostfix: false
+  workingDirectory: '' # The working directory containing relevant csproj and nuspec files; if not set then $(Build.SourcesDirectory) is used.
+  includeCsproj: true
+  includeNuspec: false
+  packageSource: 'internalPublic' # Where the package is published; should be one of 'public', 'internalPrivate' or 'internalPublic'
+  excludePaths: '*.Tests.csproj' # Comma-delimited paths to exclude from versioning
 
 steps:
   - template: /src/security/dependency-check/tasks/nuget-dependency-check.yaml
@@ -20,13 +25,13 @@ steps:
     - task: UpdateDotNetVersions@12
       displayName: .NET Versioning
       inputs:
-        releaseBranchNames: 'master,main'
-        ExcludePreReleasePostfix: false
-        workingDirectory: ''
-        includeCsproj: true
-        includeNuspec: false
-        packageSource: 'internalPublic'
-        excludePaths: '*.Tests.csproj'
+        releaseBranchNames: ${{parameters.releaseBranchName}}
+        ExcludePreReleasePostfix: ${{parameters.excludePreReleasePostfix}}
+        workingDirectory: ${{parameters.workingDirectory}}
+        includeCsproj: ${{parameters.includeCsproj}}
+        includeNuspec: ${{parameters.includeNuspec}}
+        packageSource: ${{parameters.packageSource}}
+        excludePaths: ${{parameters.excludePaths}}
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 

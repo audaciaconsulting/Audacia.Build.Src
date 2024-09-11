@@ -1,5 +1,4 @@
 parameters:
-  displayName: 'Build .NET'
   projects: '**/*.csproj'
   tests: '**/*.Tests.csproj'
   shouldRunTests: true
