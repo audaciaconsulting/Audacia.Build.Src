@@ -1,5 +1,5 @@
 parameters:
-  environment: NuGet Internal
+  environment: NuGet Internal (Gated)
 
 jobs:
 - deployment: Deploy
