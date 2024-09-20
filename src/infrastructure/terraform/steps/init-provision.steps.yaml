@@ -1,21 +1,26 @@
 # Steps template to validate and create a plan for provisioning resources
 parameters:
-  terraformDirectory: ''
-  customer: '' # Name of the customer, e.g. Solus, TechBuyer, ADM
-  environmentId: '' # Name of the environment in Azure, primarily used to suffix the container used for storing Terraform state, e.g. 'qa', 'uat', 'live'
-  terraformStateServicePrincipal: '' # Subscription to store backend in
-  environmentServicePrincipal: '' # Subscription to provision resources in
-  terraformResourceGroup: ''
-  terraformStorageAccount: ''
+  - name: terraformDirectory
+    default: ''
+  - name: environmentId # Name of the environment in Azure, primarily used to suffix the container used for storing Terraform state, e.g. 'qa', 'uat', 'live'
+    default: ''
+  - name: terraformStateServicePrincipal # Subscription to store backend in
+    default: ''
+  - name: environmentServicePrincipal # Subscription to provision resources in
+    default: ''
+  - name: terraformResourceGroup
+    default: ''
+  - name: terraformStorageAccount
+    default: ''
 
 steps:
   - checkout: self
 
   - template: ../tasks/create-storage.yaml
     parameters:
-      storageContainerName: $(ResourceName)-${{ parameters.environmentId }}
+      storageContainerName: $(ResourceName)-${{parameters.environmentId}}
       backendStorageAccount: $(terraformStorageAccount)
-      subscription: ${{ parameters.terraformStateServicePrincipal }}
+      subscription: ${{parameters.terraformStateServicePrincipal}}
 
   - task: TerraformInstaller@1
     displayName: Install Terraform
@@ -30,8 +35,8 @@ steps:
       backendServiceArm: ${{parameters.terraformStateServicePrincipal}}
       backendAzureRmResourceGroupName: ${{parameters.terraformResourceGroup}}
       backendAzureRmStorageAccountName: ${{parameters.terraformStorageAccount}}
-      backendAzureRmContainerName: $(ResourceName)-${{ parameters.environmentId }}
-      backendAzureRmKey: $(ResourceName)-${{ parameters.environmentId }}.tfstate
+      backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
+      backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
 
   - task: TerraformTaskV4@4
     displayName: 'Terraform Validate'
@@ -47,10 +52,10 @@ steps:
       provider: 'azurerm'
       command: 'plan'
       commandOptions: '-out main.tfplan'
-      environmentServiceNameAzureRM: ${{ paramaters.environmentServicePrincipal}}
+      environmentServiceNameAzureRM: ${{paramaters.environmentServicePrincipal}}
 
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Terraform Plan'
     inputs:
-      targetPath: '${{parameters.terraformDirectory}}'
+      targetPath: ${{parameters.terraformDirectory}}
       artifact: 'terraform'

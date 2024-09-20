@@ -3,25 +3,33 @@
 # /src/deployment/efcore/tasks/build.yaml
 # /src/deployment/efcore/tasks/publish.yaml
 parameters:
-  displayName: 'Migrate Azure SQL Database'
-  artifactName: 'Migrations'
-  dbContext: '' # Name of the DbContext
-  azureSubscription: '' # Azure Subscription for the resource
-  sqlHostname: '' # SQL Server Hostname
-  sqlDatabase: '' # Database Name on the SQL Server
-  sqlUser: '' # SQL Server Username
-  sqlPassword: '' # SQl Server Password
+  - name: displayName
+    default: 'Migrate Azure SQL Database'
+  - name: artifactName
+    default: 'Migrations'
+  - name: dbContext # Name of the DbContext
+    default: ''
+  - name: azureSubscription # Azure Subscription for the resource
+    default: ''
+  - name: sqlHostname # SQL Server Hostname
+    default: ''
+  - name: sqlDatabase # Database Name on the SQL Server
+    default: ''
+  - name: sqlUser # SQL Server Username
+    default: ''
+  - name: sqlPassword # SQl Server Password
+    default: ''
 
 steps:
   - task: SqlAzureDacpacDeployment@1
-    displayName: ${{ parameters.displayName }}
+    displayName: ${{parameters.displayName}}
     inputs:
-      azureSubscription: ${{ parameters.azureSubscription }}
+      azureSubscription: ${{parameters.azureSubscription}}
       AuthenticationType: 'server'
-      ServerName: ${{ parameters.sqlHostname }}
-      DatabaseName: ${{ parameters.sqlDatabase }}
-      SqlUsername: ${{ parameters.sqlUser }}
-      SqlPassword: ${{ parameters.sqlPassword }}
+      ServerName: ${{parameters.sqlHostname}}
+      DatabaseName: ${{parameters.sqlDatabase}}
+      SqlUsername: ${{parameters.sqlUser}}
+      SqlPassword: ${{parameters.sqlPassword}}
       deployType: 'SqlTask'
-      SqlFile: $(Pipeline.Workspace)/${{ parameters.artifactName }}/${{ parameters.dbContext }}.sql
+      SqlFile: $(Pipeline.Workspace)/${{parameters.artifactName}}/${{parameters.dbContext}}.sql
       IpDetectionMethod: 'AutoDetect'

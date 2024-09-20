@@ -1,9 +1,14 @@
 parameters:
-  projects: '**/*.csproj'
-  packagePath: '**/*.csproj;-:**/*Tests/*.csproj'
-  testPath: '**/*Tests/*.csproj'
-  shouldRunTests: true
-  applyVersioning: true
+  - name: projects
+    default: '**/*.csproj'
+  - name: packagePath
+    default: '**/*.csproj;-:**/*Tests/*.csproj'
+  - name: testPath
+    default: '**/*Tests/*.csproj'
+  - name: shouldRunTests
+    default: true
+  - name: applyVersioning
+    default: true
 
 steps:
   - ${{ if eq(parameters.applyVersioning, true) }}:
@@ -30,7 +35,7 @@ steps:
     displayName: .NET Build
     inputs:
       command: build
-      projects: ${{ parameters.projects}}
+      projects: ${{parameters.projects}}
       publishWebProjects: false
       arguments: >
         --configuration Release
@@ -38,18 +43,19 @@ steps:
 
   - task: DotNetCoreCLI@2
     displayName: .NET Test
-    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    condition: and(succeeded(), eq('${{parameters.shouldRunTests}}', true))
     inputs:
       command: test
-      projects: ${{ parameters.testPath }}
-      arguments: '--collect "Code coverage"'
+      projects: ${{parameters.testPath}}
+      arguments: >
+        --collect "Code coverage"
       configuration: 'Release'
 
   - task: NuGetCommand@2
     displayName: NuGet Pack
     inputs:
       command: 'pack'
-      configuration: 'release'
+      configuration: 'Release'
       packagesToPack: $(Build.SourcesDirectory)\${{parameters.packagePath}}
       versioningScheme: 'off'
 

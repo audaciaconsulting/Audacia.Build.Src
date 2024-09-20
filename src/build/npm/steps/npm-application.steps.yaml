@@ -1,37 +1,39 @@
 parameters:
-  path: ''
-  test: true
+  - name: path
+    default: ''
+  - name: test
+    default: true
 
 steps:
   - task: npmAuthenticate@0
     displayName: NPM Authenticate
     inputs:
-      workingFile: $(Build.SourcesDirectory)/${{ parameters.path }}/.npmrc
+      workingFile: $(Build.SourcesDirectory)/${{parameters.path}}/.npmrc
 
   - task: Npm@1
     displayName: NPM Install
     inputs:
       command: custom
-      workingDir: '$(Build.SourcesDirectory)/${{ parameters.path }}'
+      workingDir: '$(Build.SourcesDirectory)/${{parameters.path}}'
       customCommand: 'ci --prefer-offline --no-audit'
 
   - task: Npm@1
     displayName: NPM Build
     inputs:
       command: custom
-      workingDir: '$(Build.SourcesDirectory)/${{ parameters.path }}'
+      workingDir: '$(Build.SourcesDirectory)/${{parameters.path}}'
       customCommand: 'run build'
 
   - task: Npm@1
     displayName: NPM Test
-    condition: and(succeeded(), eq('${{ parameters.test }}', 'true'))
+    condition: and(succeeded(), eq('${{parameters.test}}', 'true'))
     inputs:
       command: custom
-      workingDir: '$(Build.SourcesDirectory)/${{ parameters.path }}'
+      workingDir: '$(Build.SourcesDirectory)/${{parameters.path}}'
       customCommand: 'test'
 
   - task: PublishBuildArtifacts@1
     displayName: Artifact Publish
     inputs:
-      PathtoPublish: $(Build.SourcesDirectory)/${{ parameters.path }}/dist/
+      PathtoPublish: $(Build.SourcesDirectory)/${{parameters.path}}/dist/
       ArtifactName: $(Build.DefinitionName)

@@ -1,21 +1,31 @@
 parameters:
-  projects: '**/*.csproj'
-  configuration: 'release'
-  testPath: '**/*Tests/*.csproj'
-  skipDependencyChecks: false
-  releaseBranchName: 'master,main'
-  excludePreReleasePostfix: false
-  workingDirectory: '' # The working directory containing relevant csproj and nuspec files; if not set then $(Build.SourcesDirectory) is used.
-  includeCsproj: true
-  includeNuspec: false
-  packageSource: 'internalPublic' # Where the package is published; should be one of 'public', 'internalPrivate' or 'internalPublic'
-  excludePaths: '*.Tests.csproj' # Comma-delimited paths to exclude from versioning
+  - name: projects
+    default: '**/*.csproj'
+  - name: configuration
+    default: 'release'
+  - name: testPath
+    default: '**/*Tests/*.csproj'
+  - name: skipDependencyChecks
+    default: false
+  - name: releaseBranchName
+    default: 'master,main'
+  - name: excludePreReleasePostfix
+    default: false
+  - name: workingDirectory # The working directory containing relevant csproj and nuspec files; if not set then $(Build.SourcesDirectory) is used.
+    default: ''
+  - name: includeCsproj
+    default: true
+  - name: includeNuspec
+    default: false
+  - name: packageSource # Where the package is published; should be one of 'public', 'internalPrivate' or 'internalPublic'
+    default: 'internalPublic'
+  - name: excludePaths # Comma-delimited paths to exclude from versioning
+    default: '*.Tests.csproj'
 
 steps:
-
   - template: /src/security/dependency-check/tasks/nuget-dependency-check.yaml
     parameters:
-      skip: ${{ parameters.skipDependencyChecks }}
+      skip: ${{parameters.skipDependencyChecks}}
 
   - template: /src/build/dotnet/tasks/netcore/version.yaml
     parameters:
@@ -31,7 +41,7 @@ steps:
     displayName: .NET Restore
     inputs:
       command: restore
-      projects: '${{parameters.projects}}'
+      projects: ${{parameters.projects}}
 
   - task: DownloadSecureFile@1
     displayName: Get Strong Naming Certificate
@@ -49,16 +59,17 @@ steps:
 
   - task: DotNetCoreCLI@2
     displayName: .NET Test
-    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    condition: and(succeeded(), eq('${{parameters.shouldRunTests}}', true))
     inputs:
       command: test
-      projects: ${{ parameters.projects }}
-      arguments: '--collect "Code coverage"'
+      projects: ${{parameters.testPath}}
+      arguments: >
+        --collect "Code coverage"
       configuration: 'Release'
 
   - template: /src/build/dotnet/tasks/netcore/assembly-sign.yaml
     parameters:
-      projects: '${{parameters.projects}}'
+      projects: ${{parameters.projects}}
 
   - task: DotNetCoreCLI@2
     displayName: .NET Pack

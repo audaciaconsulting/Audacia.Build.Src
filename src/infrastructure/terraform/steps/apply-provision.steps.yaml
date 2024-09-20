@@ -1,10 +1,15 @@
 # Steps template to use a plan to provision resources in a specific environment
 parameters:
-  environmentId: '' # Name of the environment in Azure. example qa, uat, production
-  terraformStateServicePrincipal: '' # Service principal for subscription to store terraform in
-  environmentServiceConnector: '' # Service principal for subscription to provision resources in
-  terraformResourceGroup: ''
-  terraformStorageAccount: ''
+  - name: environmentId # Name of the environment in Azure. example qa, uat, production
+    default: ''
+  - name: terraformStateServicePrincipal # Service principal for subscription to store terraform in
+    default: ''
+  - name: environmentServiceConnector # Service principal for subscription to provision resources in
+    default: ''
+  - name: terraformResourceGroup
+    default: ''
+  - name: terraformStorageAccount
+    default: ''
 
 steps:
   - checkout: none
@@ -28,14 +33,14 @@ steps:
       backendServiceArm: ${{parameters.terraformStateServicePrincipal}}
       backendAzureRmResourceGroupName: ${{parameters.terraformResourceGroup}}
       backendAzureRmStorageAccountName: ${{parameters.terraformStorageAccount}}
-      backendAzureRmContainerName: $(ResourceName)-${{ parameters.environmentId }}
-      backendAzureRmKey: $(ResourceName)-${{ parameters.environmentId }}.tfstate
+      backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
+      backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
 
   - task: TerraformTaskV4@4
-    displayName: Apply Terraform Plan            
+    displayName: Apply Terraform Plan
     inputs:
       provider: 'azurerm'
       command: 'apply'
       commandOptions: 'main.tfplan'
       workingDirectory: $(Build.SourcesDirectory)/apply
-      environmentServiceNameAzureRM: ${{ parameters.environmentServiceConnector }}
+      environmentServiceNameAzureRM: ${{parameters.environmentServiceConnector}}

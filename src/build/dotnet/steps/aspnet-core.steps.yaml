@@ -1,13 +1,16 @@
 parameters:
-  projects: '**/*.csproj'
-  tests: '**/*.Tests.csproj'
-  shouldRunTests: true
-  applyVersioning: true
+  - name: projects
+    default: '**/*.csproj'
+  - name: tests
+    default: '**/*.Tests.csproj'
+  - name: shouldRunTests
+    default: true
+  - name: applyVersioning
+    default: true
 
 steps:
-
   - ${{ if eq(parameters.applyVersioning, true) }}:
-      task: UpdateDotNetVersions@12
+    - task: UpdateDotNetVersions@12
       displayName: .NET Versioning
       inputs:
         releaseBranchNames: 'master,main'
@@ -16,34 +19,35 @@ steps:
         includeCsproj: true
         includeNuspec: false
         packageSource: 'internalPublic'
-        excludePaths: '*.Tests.csproj'
+        excludePaths: ${{parameters.tests}}
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - task: DotNetCoreCLI@2
-    displayName: '.NET Restore'
+    displayName: .NET Restore
     inputs:
       command: restore
-      projects: '${{parameters.projects}}'
+      projects: ${{parameters.projects}}
       vstsFeed: 'Audacia.Public/AudaciaPublic'
 
   - task: DotNetCoreCLI@2
-    displayName: '.NET Build'
+    displayName: .NET Build
     inputs:
       command: build
-      projects: ${{ parameters.projects}}
+      projects: ${{parameters.projects}}
       publishWebProjects: false
       arguments: >
         --configuration Release
         --no-restore
 
   - task: DotNetCoreCLI@2
-    displayName: '.NET Test'
-    condition: and(succeeded(), eq('${{ parameters.shouldRunTests }}', true))
+    displayName: .NET Test
+    condition: and(succeeded(), eq('${{parameters.shouldRunTests}}', true))
     inputs:
       command: test
-      projects: ${{ parameters.projects }}
-      arguments: '--collect "Code coverage"'
+      projects: ${{parameters.tests}}
+      arguments: >
+        --collect "Code coverage"
       configuration: 'Release'
 
   - task: DotNetCoreCLI@2
@@ -52,7 +56,11 @@ steps:
       command: publish
       publishWebProjects: false
       projects: ${{parameters.projects}}
-      arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory) --no-restore --no-build'
+      arguments: >
+        --configuration Release
+        --output $(Build.ArtifactStagingDirectory)
+        --no-restore
+        --no-build
       zipAfterPublish: false
       modifyOutputPath: true
 

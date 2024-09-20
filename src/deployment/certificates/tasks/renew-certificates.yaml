@@ -28,7 +28,7 @@ steps:
   - task: AzureCLI@2
     displayName: Install Posh-ACME
     inputs:
-      azureSubscription: ${{ parameters.azureSubscription }}
+      azureSubscription: ${{parameters.azureSubscription}}
       scriptType: pscore
       scriptLocation: inlineScript
       inlineScript:  Install-Module Posh-ACME -Force -Scope AllUsers
@@ -39,7 +39,7 @@ steps:
   - task: AzureCLI@2
     displayName: AzCopy Login
     inputs:
-      azureSubscription: ${{ parameters.azureSubscription }}
+      azureSubscription: ${{parameters.azureSubscription}}
       scriptType: pscore
       scriptLocation: inlineScript
       inlineScript: |
@@ -55,16 +55,16 @@ steps:
         - task: AzureCLI@2
           displayName: Renew '${{ domain }}'
           inputs:
-            azureSubscription: ${{ parameters.azureSubscription }}
+            azureSubscription: ${{parameters.azureSubscription}}
             scriptType: pscore
             scriptLocation: inlineScript
             scriptArguments: >
-              -AcmeDirectory "${{ parameters.acmeDirectory }}"
-              -AcmeContact "${{ parameters.acmeContact }}"
+              -AcmeDirectory "${{parameters.acmeDirectory}}"
+              -AcmeContact "${{parameters.acmeContact}}"
               -CertificateNames "${{ domain }}"
-              -StorageAccountName "${{ parameters.storageAccountName }}"
-              -StorageAccountContainer "${{ parameters.storageAccountContainer }}"
-              -KeyVaultName "${{ parameters.keyVaultName }}"
+              -StorageAccountName "${{parameters.storageAccountName}}"
+              -StorageAccountContainer "${{parameters.storageAccountContainer}}"
+              -KeyVaultName "${{parameters.keyVaultName}}"
             inlineScript: |
               param (
                   [string] $AcmeDirectory,

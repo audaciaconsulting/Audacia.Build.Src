@@ -1,7 +1,10 @@
 parameters:
-  storageContainerName: ''
-  backendStorageAccount: ''
-  subscription: ''
+  - name: storageContainerName
+    default: ''
+  - name: backendStorageAccount
+    default: ''
+  - name: subscription
+    default: ''
 
 steps:
   - task: AzureCLI@2

@@ -22,4 +22,4 @@ steps:
       displayName: .NET Dependency Check
       publishAs: Dependency Check Result (.NET)
       runEvenIfError: true
-      suppressionsFilePath: ${{ parameters.dotnetSuppressionsFilePath }}
+      suppressionsFilePath: ${{parameters.dotnetSuppressionsFilePath}}

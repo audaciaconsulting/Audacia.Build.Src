@@ -1,7 +1,7 @@
 parameters:
-- name: workingDirectory
-  type: string
-  default: '.'
+  - name: workingDirectory
+    type: string
+    default: '.'
 
 steps:
   - powershell: Write-Host "##vso[task.setvariable variable=CYPRESS_CACHE_FOLDER;]$(Build.SourcesDirectory)/.cypress_cache"

@@ -4,19 +4,19 @@ parameters:
   variableValue: ''
 
 steps:
-- task: Powershell@2
-  displayName: Set Terraform Variable '${{ parameters.variableName }}'
-  inputs:
-    targetType: inline
-    script: |
-      $name = "${{parameters.variableName}}"
-      if ($name.Length -lt 1) {
-        echo "Variable name is missing."
-        exit 1
-      }
+  - task: Powershell@2
+    displayName: Set Terraform Variable '${{parameters.variableName}}'
+    inputs:
+      targetType: inline
+      script: |
+        $name = "${{parameters.variableName}}"
+        if ($name.Length -lt 1) {
+          echo "Variable name is missing."
+          exit 1
+        }
 
-      $value = "${{parameters.variableValue}}"
+        $value = "${{parameters.variableValue}}"
 
-      Add-Content ${{parameters.terraformDirectory}}/terraform.tfvars "`n`t$name = `"$value`""
-      write-host "$name is $value"
-      exit 0
+        Add-Content ${{parameters.terraformDirectory}}/terraform.tfvars "`n`t$name = `"$value`""
+        write-host "$name is $value"
+        exit 0
