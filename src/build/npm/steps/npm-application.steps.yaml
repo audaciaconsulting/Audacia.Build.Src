@@ -3,6 +3,8 @@ parameters:
     default: ''
   - name: test
     default: true
+  - name: artifactName
+    default: '$(Build.DefinitionName)'
 
 steps:
   - task: npmAuthenticate@0
@@ -36,4 +38,4 @@ steps:
     displayName: Artifact Publish
     inputs:
       PathtoPublish: $(Build.SourcesDirectory)/${{parameters.path}}/dist/
-      ArtifactName: $(Build.DefinitionName)
+      ArtifactName: ${{parameters.artifactName}}
