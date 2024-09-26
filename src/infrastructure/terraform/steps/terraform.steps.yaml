@@ -1,44 +1,66 @@
 parameters:
-  terraformDirectory: $(System.DefaultWorkingDirectory)
-  terraformVersion: '' # Version of terraform to install
-  environmentId: '' # Name of the environment in Azure. example qa, uat, production
-  backendSubscription: '' # Subscription to store backend in
-  backendResourceGroup: '' # Resource Group to store backend in
-  backendStorageAccount: '' # Storage Account to store backend in
-  environmentSubscription: '' # Subscription to provision resources in
-  terraformInputVariables: [] # Object array of variables to set for Terraform; objects should have 'variableName' and 'variableValue' properties
+  - name: terraformDirectory
+    default: $(System.DefaultWorkingDirectory)
+  - name: terraformVersion # Version of terraform to install
+    default: ''
+  - name: environmentId # Name of the environment in Azure. example qa, uat, production
+    default: ''
+  - name: backendSubscription # Subscription to store backend in
+    default: ''
+  - name: backendResourceGroup # Resource Group to store backend in
+    default: ''
+  - name: backendStorageAccount # Storage Account to store backend in
+    default: ''
+  - name: backendStatePrefix # Prefix used in the tfstate file name, e.g 'audacia' will become 'audacia-qa.tfstate'
+    default: ''
+  - name: environmentSubscription # Subscription to provision resources in
+    default: ''
+  - name: terraformInputVariables # Object array of variables to set for Terraform; objects should have 'variableName' and 'variableValue' properties
+    default: []
 
 steps:
-  - template: /src/infrastructure/terraform/tasks/get-resource-name.yaml
+  - template: ../tasks/get-resource-name.yaml
     parameters:
       terraformDirectory: ${{ parameters.terraformDirectory }}
 
   - ${{ each variable in parameters.terraformInputVariables }}:
-    - template: /src/infrastructure/terraform/tasks/set-variable.yaml
+    - template: ../tasks/set-variable.yaml
       parameters:
         terraformDirectory: ${{ parameters.terraformDirectory }}
         variableName: ${{ variable.variableName }}
         variableValue: ${{ variable.variableValue }}
 
-  - template: /src/infrastructure/terraform/tasks/create-storage.yaml
+  - template: ../tasks/create-storage.yaml
     parameters:
       storageContainerName: $(ResourceName)-${{ parameters.environmentId }}
       subscription: ${{ parameters.backendSubscription }}
       backendStorageAccount: ${{ parameters.backendStorageAccount }}
 
-  - template: /src/infrastructure/terraform/tasks/init.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      terraformVersion: ${{ parameters.terraformVersion }}
-      environmentId: ${{ parameters.environmentId }}
-      resourceName: $(ResourceName)
-      backendSubscription: ${{ parameters.backendSubscription }}
-      backendResourceGroup: ${{ parameters.backendResourceGroup }}
-      backendStorageAccount: ${{ parameters.backendStorageAccount }}
+  - task: TerraformInstaller@0
+    displayName: Terraform Install
+    inputs:
+      terraformVersion: ${{parameters.terraformVersion}}
 
-  - template: /src/infrastructure/terraform/tasks/apply.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-      environmentSubscription: ${{ parameters.environmentSubscription }}
+  - task: TerraformTaskV2@2
+    displayName: Terraform Init
+    name: TerraformInit
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: ${{parameters.terraformDirectory}}
+      backendServiceArm: ${{parameters.backendSubscription}}
+      backendAzureRmResourceGroupName: ${{parameters.backendResourceGroup}}
+      backendAzureRmStorageAccountName: ${{parameters.backendStorageAccount}}
+      backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
+      backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
+
+  - task: TerraformTaskV2@2
+    displayName: Terraform Apply
+    name: TerraformApply
+    inputs:
+      provider: 'azurerm'
+      command: 'apply'
+      workingDirectory: ${{parameters.terraformDirectory}}
+      environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
 
   - template: /src/infrastructure/terraform/tasks/expand-variables.yaml
