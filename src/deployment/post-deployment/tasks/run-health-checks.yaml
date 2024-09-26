@@ -20,7 +20,7 @@ steps:
         $url = "${{parameters.url}}"
         Write-Host "Running health checks on url $url"
 
-        function Invoke-RestMethodWithRetry {chat
+        function Invoke-RestMethodWithRetry {
             param(
                 [string]$Uri
             )
