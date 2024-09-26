@@ -16,6 +16,7 @@ parameters:
   - name: environmentSubscription # Subscription to provision resources in
     default: ''
   - name: terraformInputVariables # Object array of variables to set for Terraform; objects should have 'variableName' and 'variableValue' properties
+    type: object
     default: []
 
 steps:
