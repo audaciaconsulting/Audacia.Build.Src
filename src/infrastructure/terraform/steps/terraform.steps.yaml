@@ -54,6 +54,8 @@ steps:
       backendAzureRmStorageAccountName: ${{parameters.backendStorageAccount}}
       backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
       backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
+    env:
+      ARM_USE_AZUREAD: true
 
   - task: TerraformTaskV4@4
     displayName: Terraform Apply
