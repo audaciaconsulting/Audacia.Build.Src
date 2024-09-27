@@ -37,12 +37,12 @@ steps:
       subscription: ${{ parameters.backendSubscription }}
       backendStorageAccount: ${{ parameters.backendStorageAccount }}
 
-  - task: TerraformInstaller@0
+  - task: TerraformInstaller@1
     displayName: Terraform Install
     inputs:
       terraformVersion: ${{parameters.terraformVersion}}
 
-  - task: TerraformTaskV2@2
+  - task: TerraformTaskV4@4
     displayName: Terraform Init
     name: TerraformInit
     inputs:
@@ -55,7 +55,7 @@ steps:
       backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
       backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
 
-  - task: TerraformTaskV2@2
+  - task: TerraformTaskV4@4
     displayName: Terraform Apply
     name: TerraformApply
     inputs:
