@@ -5,7 +5,7 @@ steps:
     inputs:
       scriptType: inlineScript
       inlineScript: |
-        $variables = Get-Content -Raw -Path $(TerraformApply.jsonOutputVariablesPath) | ConvertFrom-Json
+        $variables = Get-Content -Raw -Path $(TerraformOutput.jsonOutputVariablesPath) | ConvertFrom-Json
         foreach ($property in $variables.PSObject.Properties) {
             $key = $property.Name
             $value = $property.Value.value

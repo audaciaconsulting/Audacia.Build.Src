@@ -54,8 +54,6 @@ steps:
       backendAzureRmStorageAccountName: ${{parameters.backendStorageAccount}}
       backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
       backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
-    env:
-      ARM_USE_AZUREAD: true
 
   - task: TerraformTaskV4@4
     displayName: Terraform Apply
@@ -65,5 +63,16 @@ steps:
       command: 'apply'
       workingDirectory: ${{parameters.terraformDirectory}}
       environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
+
+  - task: TerraformTaskV4@4
+    displayName: Terraform Output
+    name: TerraformOutput
+    inputs:
+      provider: 'azurerm'
+      command: 'output'
+      workingDirectory: ${{parameters.terraformDirectory}}
+      environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
+      outputFormat: json
+      outputTo: file
 
   - template: /src/infrastructure/terraform/tasks/expand-variables.yaml
