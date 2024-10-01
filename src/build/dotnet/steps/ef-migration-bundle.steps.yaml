@@ -22,7 +22,6 @@ steps:
       targetType: "inline"
       script: |
         $efProjectPath = "${{parameters.efProjectPath}}"
-        Write-Host $efProjectPath
         $csprojectMatches = Get-ChildItem $efProjectPath -r
 
         if ($csprojectMatches.Count -lt 1) {
