@@ -1,0 +1,85 @@
+parameters:
+  - name: efProjectPath
+    default: '**/*.EntityFramework.csproj'
+  - name: runtime
+    default: 'windows'
+    values:
+      - 'windows'
+      - 'linux'
+
+steps:
+  - task: DotNetCoreCLI@2
+    displayName: .NET Restore
+    inputs:
+      command: restore
+      projects: ${{parameters.efProjectPath}}
+      vstsFeed: 'Audacia.Public/AudaciaPublic'
+
+  - task: PowerShell@2
+    displayName: Build EF Core Migration Bundle
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+    inputs:
+      targetType: "inline"
+      script: |
+        $efProjectPath = "${{parameters.efProjectPath}}"
+        Write-Host $efProjectPath
+        $csprojectMatches = Get-ChildItem $efProjectPath -r
+
+        if ($csprojectMatches.Count -lt 1) {
+          Write-Error "No project was found"
+          exit 1
+        }
+
+        if ($csprojectMatches.Count -gt 1) {
+          Write-Error "More than one project was found"
+          exit 1
+        }
+
+        $csproj = $csprojectMatches[0]
+
+        Write-Host "Found EF Project: $csproj.Name"
+
+        $containingFolder = $csproj.DirectoryName
+
+        Set-Location $containingFolder
+
+        $appSettingsLocation = "$containingFolder/appsettings.json"
+        if (!(Test-Path $appSettingsLocation)) {
+          Write-Error "appsettings.json must exist in same folder as the EF .csproj"
+          exit 1
+        }
+
+        $efProject = $csproj.FullName
+
+        $outputPath = "$(Build.ArtifactStagingDirectory)"
+
+        $sqlMigrationPath = $outputPath
+
+        $platform = "${{parameters.runtime}}"
+
+        If ($platform -eq "windows") { $sqlMigrationPath += "/efbundle.exe" }
+        ElseIf ($platform -eq "linux") { $sqlMigrationPath += "/efbundle" }
+        Else { $sqlMigrationPath += "/efbundle" }
+
+        Write-Host "Outputting to: $sqlMigrationPath"
+
+        $runtime = ""
+
+        If ($platform -eq "windows") { $runtime = "win-x64" }
+        ElseIf ($platform -eq "linux") { $runtime = "linux-x64" }
+        Else { $runtime = "win-x64" }
+
+        # Restore the dotnet-ef tools manifest
+        dotnet tool restore
+
+        # Create .exe to run the migrations
+        dotnet tool run dotnet-ef migrations bundle -p $efProject -o $sqlMigrationPath --configuration Bundle --self-contained --verbose -r $runtime
+
+        # Copy the appsettings file
+        Copy-Item $appSettingsLocation -Destination $outputPath
+      errorActionPreference: "stop"
+      workingDirectory: src/apis/Audacia.Build.Testing.Api
+
+  - template: /src/build/common/tasks/publish.yaml@templates
+    parameters:
+      artifactName: 'EFMigrationBundle'
