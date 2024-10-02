@@ -11,8 +11,6 @@ parameters:
     default: ''
   - name: backendStorageAccount # Storage Account to store backend in
     default: ''
-  - name: backendStatePrefix # Prefix used in the tfstate file name, e.g 'audacia' will become 'audacia-qa.tfstate'
-    default: ''
   - name: environmentSubscription # Subscription to provision resources in
     default: ''
   - name: terraformInputVariables # Object array of variables to set for Terraform; objects should have 'variableName' and 'variableValue' properties
