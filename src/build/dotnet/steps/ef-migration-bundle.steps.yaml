@@ -77,7 +77,6 @@ steps:
         # Copy the appsettings file
         Copy-Item $appSettingsLocation -Destination $outputPath
       errorActionPreference: "stop"
-      workingDirectory: src/apis/Audacia.Build.Testing.Api
 
   - template: /src/build/common/tasks/publish.yaml@templates
     parameters:
