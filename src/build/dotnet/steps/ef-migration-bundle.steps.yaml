@@ -1,7 +1,7 @@
 parameters:
-  - name: efProjectPath
+  - name: efProjectPath # The path to the EF Project
     default: '**/*.EntityFramework.csproj'
-  - name: runtime
+  - name: runtime # The runtime that the migration bundle will be run on
     default: 'windows'
     values:
       - 'windows'

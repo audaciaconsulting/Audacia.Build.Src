@@ -1,0 +1,107 @@
+parameters:
+  - name: displayName
+    default: 'Build Package'
+  - name: projects
+    default: '**/*.csproj'
+  - name: tests
+    default: '**/*Tests/*.csproj'
+  - name: skipDependencyChecks
+    default: false
+  - name: signAssemblies
+    default: true
+  - name: releaseBranchName
+    default: 'master,main'
+  - name: shouldRunTests
+    default: true
+  - name: applyVersioning
+    default: true
+  - name: artifactPath
+    default: ''
+  - name: artifactName
+    default: '$(Build.DefinitionName)'
+  - name: excludePreReleasePostfix
+    default: false
+  - name: workingDirectory # The working directory containing relevant csproj and nuspec files; if not set then $(Build.SourcesDirectory) is used.
+    default: ''
+  - name: includeCsproj
+    default: true
+  - name: includeNuspec
+    default: false
+  - name: packageSource # Where the package is published; should be one of 'public', 'internalPrivate' or 'internalPublic'
+    default: 'internalPublic'
+    values:
+      - 'internalPublic'
+      - 'internalPrivate'
+      - 'public'
+  - name: excludePaths # Comma-delimited paths to exclude from versioning
+    default: '*.Tests.csproj'
+
+jobs:
+  - job:
+    displayName: ${{parameters.displayName}}
+    steps:
+      - template: /src/security/dependency-check/tasks/nuget-dependency-check.yaml
+        parameters:
+          skip: ${{parameters.skipDependencyChecks}}
+          continueIfVulnerabilities: true
+
+      - ${{ if eq(parameters.applyVersioning, true) }}:
+        - task: UpdateDotNetVersions@12
+          displayName: .NET Versioning
+          inputs:
+            releaseBranchNames: ${{parameters.releaseBranchName}}
+            ExcludePreReleasePostfix: ${{parameters.excludePreReleasePostfix}}
+            workingDirectory: ${{parameters.workingDirectory}}
+            includeCsproj: ${{parameters.includeCsproj}}
+            includeNuspec: ${{parameters.includeNuspec}}
+            packageSource: ${{parameters.packageSource}}
+            excludePaths: ${{parameters.excludePaths}}
+          env:
+            SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+      - task: DotNetCoreCLI@2
+        displayName: .NET Restore
+        inputs:
+          command: restore
+          projects: ${{parameters.projects}}
+          vstsFeed: 'Audacia.Public/AudaciaPublic'
+
+      - task: DotNetCoreCLI@2
+        displayName: .NET Build
+        inputs:
+          command: build
+          projects: ${{parameters.projects}}
+          publishWebProjects: false
+          arguments: >
+            --configuration Release
+            --no-restore
+
+      - task: DotNetCoreCLI@2
+        displayName: .NET Test
+        condition: and(succeeded(), eq('${{parameters.shouldRunTests}}', true))
+        inputs:
+          command: test
+          projects: ${{parameters.tests}}
+          arguments: >
+            --collect "Code coverage"
+          configuration: 'Release'
+
+      - ${{ if eq(parameters.signAssemblies, true) }}:
+        - template: /src/build/dotnet/tasks/netcore/assembly-sign.yaml
+          parameters:
+            projects: ${{parameters.projects}}
+
+      - task: DotNetCoreCLI@2
+        displayName: .NET Pack
+        condition: and(succeeded(), and(not(eq(variables['Build.Reason'], 'PullRequest')), not(eq(variables['Build.Reason'], 'Schedule'))))
+        inputs:
+          command: pack
+          nobuild: true
+          includesymbols: false
+          configuration: 'Release'
+          packagesToPack: ${{parameters.projects}}
+
+      - template: /src/build/common/tasks/publish.yaml
+        parameters:
+          artifactName: ${{parameters.artifactName}}
+          path: ${{parameters.artifactPath}}

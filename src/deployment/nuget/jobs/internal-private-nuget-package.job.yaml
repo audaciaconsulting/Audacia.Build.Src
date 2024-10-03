@@ -1,0 +1,18 @@
+jobs:
+  - deployment: Deploy
+    displayName: Deploy to NuGet (Internal Private)
+    environment: NuGet Internal
+    condition: and(succeeded(), and(not(eq(variables['Build.Reason'], 'PullRequest')), not(eq(variables['Build.Reason'], 'Schedule'))))
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: NuGetToolInstaller@1
+              displayName: Get NuGet
+
+            - task: NuGetCommand@2
+              displayName: NuGet Push
+              inputs:
+                command: 'push'
+                packagesToPush: '$(Pipeline.Workspace)\**\*.nupkg'
+                publishVstsFeed: 'f09ace73-ace9-4751-ab42-2fada3f24d78'
