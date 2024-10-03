@@ -52,6 +52,8 @@ steps:
       backendAzureRmStorageAccountName: ${{parameters.backendStorageAccount}}
       backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
       backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
+    env:
+      TF_LOG: "TRACE"
 
   - task: TerraformTaskV4@4
     displayName: Terraform Apply
