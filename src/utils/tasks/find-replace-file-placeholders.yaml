@@ -1,5 +1,7 @@
 # Find and replaces placeholders in a text file at run time
 parameters:
+  - name: displayName
+    default: 'Replace Placeholders With Runtime Values'
   - name: inputFilePath           # REQUIRED: The input file on which to operate
     type: string
     default: ''
@@ -16,7 +18,7 @@ parameters:
 steps:
   # Find and Replace
   - task: PowerShell@2
-    displayName: 'Replace Placeholders With Runtime Values'
+    displayName: ${{parameters.displayName}}
     inputs:
       targetType: 'inline'
       script: |
