@@ -11,6 +11,8 @@ parameters:
     default: ''
   - name: backendStorageAccount # Storage Account to store backend in
     default: ''
+  - name: backendStoragePrefix # The prefix to use for the backend storage account and TF State name
+    default: ''
   - name: environmentSubscription # Subscription to provision resources in
     default: ''
   - name: terraformInputVariables # Object array of variables to set for Terraform; objects should have 'variableName' and 'variableValue' properties
@@ -18,10 +20,6 @@ parameters:
     default: []
 
 steps:
-  - template: ../tasks/get-resource-name.yaml
-    parameters:
-      terraformDirectory: ${{ parameters.terraformDirectory }}
-
   - ${{ each variable in parameters.terraformInputVariables }}:
     - template: ../tasks/set-variable.yaml
       parameters:
@@ -31,9 +29,9 @@ steps:
 
   - template: ../tasks/create-storage.yaml
     parameters:
-      storageContainerName: $(ResourceName)-${{ parameters.environmentId }}
-      subscription: ${{ parameters.backendSubscription }}
-      backendStorageAccount: ${{ parameters.backendStorageAccount }}
+      storageContainerName: ${{parameters.backendStoragePrefix}}-${{parameters.environmentId}}
+      subscription: ${{parameters.backendSubscription}}
+      backendStorageAccount: ${{parameters.backendStorageAccount}}
 
   - task: TerraformInstaller@1
     displayName: Terraform Install
@@ -50,8 +48,8 @@ steps:
       backendServiceArm: ${{parameters.backendSubscription}}
       backendAzureRmResourceGroupName: ${{parameters.backendResourceGroup}}
       backendAzureRmStorageAccountName: ${{parameters.backendStorageAccount}}
-      backendAzureRmContainerName: $(ResourceName)-${{parameters.environmentId}}
-      backendAzureRmKey: $(ResourceName)-${{parameters.environmentId}}.tfstate
+      backendAzureRmContainerName: ${{parameters.backendStoragePrefix}}-${{parameters.environmentId}}
+      backendAzureRmKey: ${{parameters.backendStoragePrefix}}-${{parameters.environmentId}}.tfstate
 
   - task: TerraformTaskV4@4
     displayName: Terraform Apply
