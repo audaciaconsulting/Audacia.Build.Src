@@ -55,7 +55,7 @@ steps:
         # Iterate over each variable and add it to the group
         foreach ($var in $variables) {
           $varName = $var.variableName;
-          $varValue = $var.variableValue -replace '"', '""';
+          $varValue = '"{0}"' -f $($var.variableValue -replace '"', '""');
           $isSecret = $var.isSecret;
 
           # If isSecret is not set, ensure it is set to false
