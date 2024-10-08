@@ -4,7 +4,7 @@ parameters:
     default: '**/*.EntityFramework.csproj'
   - name: startupProject # (Optional) The path to the Startup Project if it is different to the EF Project
     default: ''
-  - name: dbContext
+  - name: dbContext # (Optional) The name of the DB Context if multiple exist
     default: ''
   - name: runtime # The runtime that the migration bundle will be run on
     default: 'windows'
@@ -84,7 +84,8 @@ steps:
         dotnet tool restore
 
         # Create .exe to run the migrations
-        dotnet tool run dotnet-ef migrations bundle -p $efProject -o $sqlMigrationPath --configuration Bundle --self-contained -r $runtime $extraParams
+        $command = "dotnet tool run dotnet-ef migrations bundle -p $efProject -o $sqlMigrationPath --configuration Bundle --self-contained -r $runtime $extraParams"
+        Invoke-Expression $command
 
         # Copy the appsettings file
         Copy-Item $appSettingsLocation -Destination $outputPath
