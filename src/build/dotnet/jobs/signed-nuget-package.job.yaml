@@ -20,7 +20,7 @@ parameters:
   - name: includeNuspec
     default: false
   - name: packageSource # Where the package is published; should be one of 'public', 'internalPrivate' or 'internalPublic'
-    default: 'internalPublic'
+    default: 'public'
   - name: excludePaths # Comma-delimited paths to exclude from versioning
     default: '*.Tests.csproj'
 
