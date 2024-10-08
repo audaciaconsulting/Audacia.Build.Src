@@ -1,7 +1,7 @@
 # Steps to build an EF Project as a migration bundle
 parameters:
   - name: efProject # The path to the EF Project
-    default: '**/*.EntityFramework.csproj'
+    type: string
   - name: startupProject # (Optional) The path to the Startup Project if it is different to the EF Project
     default: ''
   - name: dbContext # (Optional) The name of the DB Context if multiple exist
@@ -29,15 +29,10 @@ steps:
       targetType: "inline"
       script: |
         $efProjectPath = "${{parameters.efProject}}"
-        $csprojectMatches = Get-ChildItem $efProjectPath -r
+        $csprojectMatches = Get-ChildItem $efProjectPath
 
         if ($csprojectMatches.Count -lt 1) {
           Write-Error "No project was found"
-          exit 1
-        }
-
-        if ($csprojectMatches.Count -gt 1) {
-          Write-Error "More than one project was found"
           exit 1
         }
 
