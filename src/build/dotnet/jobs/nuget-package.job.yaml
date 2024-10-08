@@ -38,7 +38,10 @@ parameters:
 
 jobs:
   - job:
-    displayName: ${{parameters.displayName}}
+    displayName:
+    variables:
+      - group: Code Signing
+
     steps:
       - template: /src/security/dependency-check/tasks/nuget-dependency-check.yaml
         parameters:
