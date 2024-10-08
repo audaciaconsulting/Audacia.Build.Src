@@ -1,3 +1,4 @@
+# Task to take Terraform outputs and map them to Azure DevOps pipeline variables
 steps:
   - task: PowerShell@1
     displayName: Expand Variables

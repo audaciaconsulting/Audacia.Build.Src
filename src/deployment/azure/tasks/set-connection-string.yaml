@@ -1,4 +1,4 @@
-# Sets the Connection String on an Azure Web Application Deployment Slot to the specified SQL Server Database
+# Task to set the Connection String on an Azure Web Application Deployment Slot to the specified SQL Server Database
 parameters:
   - name: azureSubscription # Service Principle name to access the Azure Environment
     default: ''

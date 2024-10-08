@@ -1,7 +1,11 @@
+# Task to add a variable to the Terraform tfvars file
 parameters:
-  terraformDirectory: '$(System.DefaultWorkingDirectory)'
-  variableName: ''
-  variableValue: ''
+  - name: terraformDirectory
+    default: '$(System.DefaultWorkingDirectory)'
+  - name: variableName
+    default: ''
+  - name: variableValue
+    default: ''
 
 steps:
   - task: Powershell@2

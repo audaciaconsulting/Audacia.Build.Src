@@ -1,3 +1,4 @@
+# Task to publish a path as an artifact
 parameters:
   - name: path
     default: ''

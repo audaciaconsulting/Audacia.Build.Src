@@ -1,3 +1,4 @@
+# Steps to provision an environment with Terraform
 parameters:
   - name: terraformDirectory
     default: $(System.DefaultWorkingDirectory)

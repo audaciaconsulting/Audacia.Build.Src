@@ -1,3 +1,4 @@
+# Job to build a NuGet Package that will be hosted on the Audacia NuGet feed, as this requires code signing
 parameters:
   - name: displayName
     default: 'Build Package'

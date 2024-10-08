@@ -1,3 +1,4 @@
+# Task to check if a storage container exists, and if not creates it
 parameters:
   - name: storageContainerName
     default: ''

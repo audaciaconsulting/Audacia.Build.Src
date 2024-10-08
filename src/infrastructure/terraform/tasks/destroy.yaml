@@ -1,3 +1,4 @@
+# Task to destory some or all Terraform resources
 parameters:
   - name: terraformDirectory
     default: $(System.DefaultWorkingDirectory)

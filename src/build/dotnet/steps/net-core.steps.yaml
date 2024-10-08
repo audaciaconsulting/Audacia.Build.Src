@@ -1,3 +1,4 @@
+# Steps to build .NET Core Projects
 parameters:
   - name: projects
     default: '**/*.csproj'

@@ -1,3 +1,4 @@
+# Task to run EF6 OpenIddict Seeding
 parameters:
   - name: toolVersion # The version of the libraries to use
     default: ''

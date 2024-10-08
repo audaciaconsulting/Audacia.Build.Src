@@ -1,5 +1,6 @@
+# Steps to run a .NET depdendency check
 parameters:
-  - name: displayName
+  - name: projectName
     default: 'Build .NET'
   - name: publishAs
     default: ''

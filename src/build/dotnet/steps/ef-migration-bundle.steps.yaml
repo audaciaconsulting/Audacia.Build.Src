@@ -1,3 +1,4 @@
+# Steps to build an EF Project as a migration bundle
 parameters:
   - name: efProjectPath # The path to the EF Project
     default: '**/*.EntityFramework.csproj'

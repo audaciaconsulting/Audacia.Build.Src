@@ -1,3 +1,4 @@
+# Job to deploy a NuGet Package to the Public NuGet Feed
 jobs:
   - deployment: Deploy
     displayName: Deploy to NuGet (Public)

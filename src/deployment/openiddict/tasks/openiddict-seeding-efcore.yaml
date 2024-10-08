@@ -1,3 +1,4 @@
+# Task to run EFCore OpenIddict Seeding
 parameters:
   - name: toolVersion # The version of the Audacia.Auth.OpenIddict libraries to use
     default: ''

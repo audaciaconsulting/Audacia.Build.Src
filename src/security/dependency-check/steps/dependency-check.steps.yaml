@@ -1,3 +1,4 @@
+# Steps to run dependency checks on .NET .csproj and NPM package.json
 parameters:
   - name: npmProjects   # Array of NPM projects to check
     type: object        # Provide an array containing objects of: { name: 'UI', path: 'folder/containing/package', suppressionsFilePath: 'optional/path/to/suppressions.xml' }

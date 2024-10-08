@@ -1,3 +1,4 @@
+# Task to sign a .NET Core Project with the Audacia Code Signing certificate
 parameters:
   - name: projects
     default: '**/*.csproj'

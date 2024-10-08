@@ -1,3 +1,4 @@
+# Task to use Posh-ACME to renew a certificate in Azure Key Vault
 parameters:
     # The Name of the Azure Service Connection to use
   - name: azureSubscription
