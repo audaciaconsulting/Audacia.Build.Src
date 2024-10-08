@@ -1,19 +1,25 @@
 # Steps to build an EF Project as a migration bundle
 parameters:
-  - name: efProjectPath # The path to the EF Project
+  - name: efProject # The path to the EF Project
     default: '**/*.EntityFramework.csproj'
+  - name: startupProject # (Optional) The path to the Startup Project if it is different to the EF Project
+    default: ''
+  - name: dbContext
+    default: ''
   - name: runtime # The runtime that the migration bundle will be run on
     default: 'windows'
     values:
       - 'windows'
       - 'linux'
+  - name: artifactName
+    default: 'EFMigrationBundle'
 
 steps:
   - task: DotNetCoreCLI@2
     displayName: .NET Restore
     inputs:
       command: restore
-      projects: ${{parameters.efProjectPath}}
+      projects: ${{ coalesce(parameters.startupProject, parameters.efProject) }}
       vstsFeed: 'Audacia.Public/AudaciaPublic'
 
   - task: PowerShell@2
@@ -22,7 +28,7 @@ steps:
     inputs:
       targetType: "inline"
       script: |
-        $efProjectPath = "${{parameters.efProjectPath}}"
+        $efProjectPath = "${{parameters.efProject}}"
         $csprojectMatches = Get-ChildItem $efProjectPath -r
 
         if ($csprojectMatches.Count -lt 1) {
@@ -69,11 +75,16 @@ steps:
         ElseIf ($platform -eq "linux") { $runtime = "linux-x64" }
         Else { $runtime = "win-x64" }
 
+        $extraParams = '';
+
+        If ("${{parameters.startupProject}}" -ne "") { $extraParams += " -s ${{parameters.startupProject}}" }
+        If ("${{parameters.dbContext}}" -ne "") { $extraParams += " -c ${{parameters.dbContext}}" }
+
         # Restore the dotnet-ef tools manifest
         dotnet tool restore
 
         # Create .exe to run the migrations
-        dotnet tool run dotnet-ef migrations bundle -p $efProject -o $sqlMigrationPath --configuration Bundle --self-contained --verbose -r $runtime
+        dotnet tool run dotnet-ef migrations bundle -p $efProject -o $sqlMigrationPath --configuration Bundle --self-contained -r $runtime $extraParams
 
         # Copy the appsettings file
         Copy-Item $appSettingsLocation -Destination $outputPath
@@ -81,4 +92,4 @@ steps:
 
   - template: /src/build/common/tasks/publish.yaml@templates
     parameters:
-      artifactName: 'EFMigrationBundle'
+      artifactName: ${{parameters.artifactName}}
