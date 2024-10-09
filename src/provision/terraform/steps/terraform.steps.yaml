@@ -6,15 +6,15 @@ parameters:
     default: ''
   - name: environmentId # Name of the environment in Azure. example qa, uat, production
     default: ''
-  - name: backendSubscription # Subscription to store backend in
+  - name: terraformStateServiceConnectionName # Name of the service connection to connect to the Terraform state storage
     default: ''
-  - name: backendResourceGroup # Resource Group to store backend in
+  - name: terraformStateResourceGroup # Resource group with the Terraform state storage in
     default: ''
-  - name: backendStorageAccount # Storage Account to store backend in
+  - name: terraformStateStorageAccount # Storage Account with the Terraform state storage in
     default: ''
-  - name: backendStoragePrefix # The prefix to use for the backend storage account and TF State name
+  - name: terraformStateStoragePrefix # The prefix to use for the Terraform state storage
     default: ''
-  - name: environmentSubscription # Subscription to provision resources in
+  - name: provisioningServiceConnectionName # Name of the service connection used to provision resources
     default: ''
   - name: terraformInputVariables # Object array of variables to set for Terraform; objects should have 'variableName' and 'variableValue' properties
     type: object
@@ -28,11 +28,11 @@ steps:
         variableName: ${{ variable.variableName }}
         variableValue: ${{ variable.variableValue }}
 
-  - template: ../tasks/create-storage.yaml
+  - template: /src/provision/azure/tasks/create-storage-container.yaml
     parameters:
-      storageContainerName: ${{parameters.backendStoragePrefix}}-${{parameters.environmentId}}
-      subscription: ${{parameters.backendSubscription}}
-      backendStorageAccount: ${{parameters.backendStorageAccount}}
+      storageContainerName: ${{parameters.terraformStateStoragePrefix}}-${{parameters.environmentId}}
+      subscription: ${{parameters.terraformStateServiceConnectionName}}
+      backendStorageAccount: ${{parameters.terraformStateStorageAccount}}
 
   - task: TerraformInstaller@1
     displayName: Terraform Install
@@ -46,11 +46,11 @@ steps:
       provider: 'azurerm'
       command: 'init'
       workingDirectory: ${{parameters.terraformDirectory}}
-      backendServiceArm: ${{parameters.backendSubscription}}
-      backendAzureRmResourceGroupName: ${{parameters.backendResourceGroup}}
-      backendAzureRmStorageAccountName: ${{parameters.backendStorageAccount}}
-      backendAzureRmContainerName: ${{parameters.backendStoragePrefix}}-${{parameters.environmentId}}
-      backendAzureRmKey: ${{parameters.backendStoragePrefix}}-${{parameters.environmentId}}.tfstate
+      backendServiceArm: ${{parameters.terraformStateServiceConnectionName}}
+      backendAzureRmResourceGroupName: ${{parameters.terraformStateResourceGroup}}
+      backendAzureRmStorageAccountName: ${{parameters.terraformStateStorageAccount}}
+      backendAzureRmContainerName: ${{parameters.terraformStateStoragePrefix}}-${{parameters.environmentId}}
+      backendAzureRmKey: ${{parameters.terraformStateStoragePrefix}}-${{parameters.environmentId}}.tfstate
 
   - task: TerraformTaskV4@4
     displayName: Terraform Apply
@@ -59,7 +59,7 @@ steps:
       provider: 'azurerm'
       command: 'apply'
       workingDirectory: ${{parameters.terraformDirectory}}
-      environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
+      environmentServiceNameAzureRM: ${{parameters.provisioningServiceConnectionName}}
 
   - task: TerraformTaskV4@4
     displayName: Terraform Output
@@ -68,7 +68,7 @@ steps:
       provider: 'azurerm'
       command: 'output'
       workingDirectory: ${{parameters.terraformDirectory}}
-      environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
+      environmentServiceNameAzureRM: ${{parameters.provisioningServiceConnectionName}}
       outputFormat: json
       outputTo: file
 

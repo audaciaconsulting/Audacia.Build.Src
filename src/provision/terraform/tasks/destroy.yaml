@@ -2,7 +2,7 @@
 parameters:
   - name: terraformDirectory
     default: $(System.DefaultWorkingDirectory)
-  - name: environmentSubscription
+  - name: provisioningServiceConnectionName # Name of the service connection used to destroy resources
     default: ''
   - name: resourcesToDestroy # If the whole plan should be destroyed then don't pass anything in
     default: []
@@ -16,7 +16,7 @@ steps:
         provider: 'azurerm'
         command: 'destroy'
         workingDirectory: ${{parameters.terraformDirectory}}
-        environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
+        environmentServiceNameAzureRM: ${{parameters.provisioningServiceConnectionName}}
 
   # If some resources have been passed in then we only want to destroy them, so loop through and call destroy for each one
   - ${{ if gt(length(parameters.resourcesToDestroy), 0) }}:
@@ -27,5 +27,5 @@ steps:
           provider: 'azurerm'
           command: 'destroy'
           workingDirectory: ${{parameters.terraformDirectory}}
-          environmentServiceNameAzureRM: ${{parameters.environmentSubscription}}
+          environmentServiceNameAzureRM: ${{parameters.provisioningServiceConnectionName}}
           commandOptions: -target=${{ resource }}
