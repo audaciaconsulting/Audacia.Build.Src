@@ -86,6 +86,6 @@ steps:
         Copy-Item $appSettingsLocation -Destination $outputPath
       errorActionPreference: "stop"
 
-  - template: /src/build/common/tasks/publish.yaml@templates
+  - template: /src/build/common/tasks/publish.yaml
     parameters:
       artifactName: ${{parameters.artifactName}}

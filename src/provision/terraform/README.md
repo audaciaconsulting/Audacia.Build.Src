@@ -7,10 +7,10 @@
 
 ## Overview
 
-The Terraform steps can be used to create the basic Azure resources needed for an environment, including:
+The Terraform steps can be used to create Azure resources needed for an environment, including:
 
-- Azure SQL database, including a staging database
-- App service for each app, including staging slots
+- Azure SQL database
+- App service and staging slots
 - Storage accounts
 - Key vault
 

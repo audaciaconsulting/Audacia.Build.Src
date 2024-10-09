@@ -1,7 +1,6 @@
 # Runs the EF Core migrations script for the provided DbContext on the provided SQL Server.
-# Requires the following steps to have been run at an earlier stage in the pipeline.
-# /src/deployment/efcore/tasks/build.yaml
-# /src/deployment/efcore/tasks/publish.yaml
+# Requires the /src/build/dotnet/steps/ef-migration-idempotent-script.steps.yaml steps
+# to have been run at an earlier stage in the pipeline.
 parameters:
   - name: displayName
     default: 'Migrate Azure SQL Database'
