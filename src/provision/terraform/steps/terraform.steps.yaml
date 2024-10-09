@@ -72,4 +72,4 @@ steps:
       outputFormat: json
       outputTo: file
 
-  - template: /src/infrastructure/terraform/tasks/expand-variables.yaml
+  - template: /src/provision/terraform/tasks/expand-variables.yaml
