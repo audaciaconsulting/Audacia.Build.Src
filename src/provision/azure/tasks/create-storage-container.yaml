@@ -1,0 +1,41 @@
+# Task to check if a storage container exists, and if not creates it
+parameters:
+  - name: storageContainerName
+    type: string
+  - name: storageAccountName
+    type: string
+  - name: serviceConnectionName
+    type: string
+
+steps:
+  - task: AzureCLI@2
+    displayName: Create Storage Container
+    inputs:
+      azureSubscription: ${{parameters.serviceConnectionName}}
+      scriptType: 'ps'
+      scriptLocation: inlineScript
+      inlineScript: |
+        $storageContainerName="${{parameters.storageContainerName}}"
+        $backendStorageAccount="${{parameters.storageAccountName}}"
+
+        $containerExists = (az storage container exists --account-name $backendStorageAccount --name $storageContainerName --auth-mode login) | ConvertFrom-Json
+
+        if ($containerExists.exists -eq $false)
+        {
+          $containerCreated = (az storage container create --name $storageContainerName --account-name $backendStorageAccount --public-access off) | ConvertFrom-Json
+
+          if ($containerCreated.created -eq $false) {
+            write-host "Storage container was not created"
+            exit 1
+          }
+          else {
+            write-host "Storage container $storageContainerName created"
+          }
+        }
+        else
+        {
+            write-host "Storage container $storageContainerName already exists"
+        }
+        exit 0
+
+
